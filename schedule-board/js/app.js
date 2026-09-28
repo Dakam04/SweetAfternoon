@@ -1,6 +1,7 @@
 'use strict';
 
 const CONFIG = window.BOARD_CONFIG;
+const TEXTS = window.BOARD_TEXTS;
 
 // iOS 15 이하 Safari 에는 canvas roundRect 가 없어서 같은 모양을 직접 그린다.
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -60,7 +61,7 @@ function weekTitle(offset) {
   const anchor = dates[3];
   const nth = Math.floor((anchor.getDate() - 1) / 7) + 1;
   const range = `${shortDate(dates[0])}〜${shortDate(dates[6])}`;
-  return { title: `${anchor.getFullYear()}年${anchor.getMonth() + 1}月 第${nth}週`, range };
+  return { title: TEXTS.weekTitle(anchor.getFullYear(), anchor.getMonth() + 1, nth), range };
 }
 
 function shortDate(date) {
@@ -113,11 +114,11 @@ function saveSchedule() {
     localStorage.setItem(CONFIG.storageKey, JSON.stringify(cleanSchedule()));
   } catch (err) {
     console.error('シフトの保存に失敗しました', err);
-    setStatus('保存できませんでした。ブラウザの保存容量を確認してください。', true);
+    setStatus(TEXTS.saveFailed, true);
     return false;
   }
   setDirty(false);
-  setStatus('保存しました。');
+  setStatus(TEXTS.saved);
   return true;
 }
 
@@ -139,7 +140,7 @@ function setStatus(message, isError = false) {
 function setDirty(dirty) {
   state.dirty = dirty;
   if (dirty) {
-    setStatus('保存していない変更があります。');
+    setStatus(TEXTS.unsaved);
   }
 }
 
@@ -152,11 +153,10 @@ function markChanged() {
 
 // 이번 주 기준 상대 표기 (今週, 3週前, 2週後 …)
 function relativeWeekLabel(offset) {
-  const names = { '-1': '先週', 0: '今週', 1: '来週', 2: '再来週' };
-  if (names[offset]) {
-    return names[offset];
+  if (TEXTS.relativeWeeks[offset]) {
+    return TEXTS.relativeWeeks[offset];
   }
-  return offset < 0 ? `${-offset}週前` : `${offset}週後`;
+  return offset < 0 ? TEXTS.weeksAgo(-offset) : TEXTS.weeksLater(offset);
 }
 
 // 고른 날짜가 이번 주에서 몇 주 떨어져 있는지 계산한다.
@@ -215,17 +215,22 @@ function renderDayPanel(date, index) {
   title.textContent = dateLabel(date);
   const closed = document.createElement('label');
   closed.className = 'switch';
-  closed.innerHTML = '<input type="checkbox" data-field="closed"><span>お休み</span>';
-  closed.querySelector('input').checked = day.closed;
+  const closedInput = document.createElement('input');
+  closedInput.type = 'checkbox';
+  closedInput.dataset.field = 'closed';
+  closedInput.checked = day.closed;
+  const closedText = document.createElement('span');
+  closedText.textContent = TEXTS.closed;
+  closed.append(closedInput, closedText);
   head.append(title, closed);
 
-  const closedNote = field('お休みの理由', renderCombo('closedNote', day.closedNote, CONFIG.closedLabel, 20), 'day__closed-note');
+  const closedNote = field(TEXTS.closedNote, renderCombo('closedNote', day.closedNote, CONFIG.closedLabel, 20), 'day__closed-note');
   const closedMessage = field(
-    'メッセージ（任意）',
-    renderCombo('closedMessage', day.closedMessage, CONFIG.closedMessage || '例：またのお帰りをお待ちしております', 30),
+    TEXTS.closedMessage,
+    renderCombo('closedMessage', day.closedMessage, CONFIG.closedMessage || TEXTS.closedMessagePlaceholder, 30),
     'day__closed-note',
   );
-  const event = field('イベント', renderCombo('event', day.event, '例：生誕祭、コラボイベント', 20), 'day__event');
+  const event = field(TEXTS.event, renderCombo('event', day.event, TEXTS.eventPlaceholder, 20), 'day__event');
 
   const rows = document.createElement('div');
   rows.className = 'day__rows';
@@ -235,7 +240,7 @@ function renderDayPanel(date, index) {
   add.type = 'button';
   add.className = 'day__add';
   add.dataset.action = 'add-row';
-  add.textContent = '＋ キャストを追加';
+  add.textContent = TEXTS.addRow;
   add.disabled = day.rows.length >= CONFIG.maxRows;
 
   panel.append(head, closedNote, closedMessage, event, rows, add);
@@ -247,17 +252,17 @@ function renderRow(row, rowIndex) {
   line.className = 'row';
   line.dataset.index = String(rowIndex);
 
-  const time = textInput('time', row.time, '17:00-L', 12);
-  time.setAttribute('aria-label', '時間');
+  const time = textInput('time', row.time, TEXTS.timePlaceholder, 12);
+  time.setAttribute('aria-label', TEXTS.timeLabel);
 
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.className = 'row__remove';
   remove.dataset.action = 'remove-row';
   remove.textContent = '×';
-  remove.setAttribute('aria-label', 'この行を削除');
+  remove.setAttribute('aria-label', TEXTS.removeRow);
 
-  line.append(renderCombo('name', row.name, '名前', 12), time, remove);
+  line.append(renderCombo('name', row.name, TEXTS.namePlaceholder, 12), time, remove);
   return line;
 }
 
@@ -330,7 +335,7 @@ function renderCombo(fieldName, value, placeholder, maxLength) {
   toggle.type = 'button';
   toggle.className = 'combo__toggle';
   toggle.tabIndex = -1;
-  toggle.setAttribute('aria-label', '候補を表示');
+  toggle.setAttribute('aria-label', TEXTS.showOptions);
   toggle.textContent = '▾';
 
   const list = document.createElement('ul');
@@ -568,11 +573,12 @@ function drawEventRibbon(ctx, card, text, color) {
   ctx.roundRect(x, top, w, ribbonH, ribbonH / 2);
   ctx.fill();
 
-  fitFont(ctx, `♡ ${text} ♡`, 700, 36, w - 40);
+  const label = TEXTS.posterEvent(text);
+  fitFont(ctx, label, 700, 36, w - 40);
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`♡ ${text} ♡`, x + w / 2, top + ribbonH / 2 + 2);
+  ctx.fillText(label, x + w / 2, top + ribbonH / 2 + 2);
 
   const used = ribbonH + 24;
   return { x, y: y + used, w, h: h - used };
@@ -605,7 +611,7 @@ function drawClosed(ctx, card, area, reason, message, color) {
 
   setFont(ctx, 500, 34);
   ctx.globalAlpha = 0.7;
-  ctx.fillText('— Holiday —', centerX, centerY - 88);
+  ctx.fillText(TEXTS.posterClosedHeading, centerX, centerY - 88);
   ctx.globalAlpha = 1;
 
   fitFont(ctx, reason, 700, 66, w - 40);
@@ -683,7 +689,7 @@ function copyPreviousWeek() {
     const day = state.schedule[toKey(date)];
     return day && (day.closed || day.event || day.rows.some((row) => row.name || row.time));
   });
-  if (hasData && !confirm('この週の内容を前週の内容で上書きします。よろしいですか？')) {
+  if (hasData && !confirm(TEXTS.confirmCopyPrev)) {
     return;
   }
   // 요일마다 반복되는 근무와 휴무만 복사하고, 날짜에 딸린 이벤트는 비운다.
@@ -704,7 +710,7 @@ function copyPreviousWeek() {
 }
 
 function clearWeek() {
-  if (!confirm('この週の入力内容をすべて消します。よろしいですか？')) {
+  if (!confirm(TEXTS.confirmClear)) {
     return;
   }
   weekDates(state.weekOffset).forEach((date) => {
@@ -718,21 +724,29 @@ function clearWeek() {
 // 휴대폰에서는 미리보기 이미지를 길게 눌러 사진 앱에 저장할 수도 있다.
 function openImagePreview() {
   const canvas = document.getElementById('poster');
-  canvas.toBlob((blob) => {
-    if (!blob) {
-      setStatus('画像を作成できませんでした。', true);
-      return;
-    }
-    const dialog = document.getElementById('image-dialog');
-    const url = URL.createObjectURL(blob);
-    const fileName = `shift_${toKey(weekStart(state.weekOffset))}.png`;
-    document.getElementById('image-preview').src = url;
-    const link = document.getElementById('image-download');
-    link.href = url;
-    link.download = fileName;
-    setImageZoom(false);
-    dialog.showModal();
-  }, 'image/png');
+  try {
+    canvas.toBlob(showImagePreview, 'image/png');
+  } catch (err) {
+    // file:// 로 열면 템플릿 이미지가 다른 출처로 취급되어 SecurityError 가 난다.
+    console.error('画像を作成できませんでした', err);
+    setStatus(TEXTS.imageBlocked, true);
+  }
+}
+
+function showImagePreview(blob) {
+  if (!blob) {
+    setStatus(TEXTS.imageFailed, true);
+    return;
+  }
+  const dialog = document.getElementById('image-dialog');
+  const url = URL.createObjectURL(blob);
+  const fileName = `shift_${toKey(weekStart(state.weekOffset))}.png`;
+  document.getElementById('image-preview').src = url;
+  const link = document.getElementById('image-download');
+  link.href = url;
+  link.download = fileName;
+  setImageZoom(false);
+  dialog.showModal();
 }
 
 function closeImagePreview() {
@@ -753,7 +767,7 @@ function setImageZoom(zoomed, clickEvent) {
     ratioY = (clickEvent.clientY - rect.top) / rect.height;
   }
   viewport.classList.toggle('is-zoomed', zoomed);
-  document.querySelector('[data-action="toggle-zoom"]').textContent = zoomed ? '全体を表示' : '拡大';
+  document.querySelector('[data-action="toggle-zoom"]').textContent = zoomed ? TEXTS.zoomOut : TEXTS.zoomIn;
   if (zoomed) {
     viewport.scrollLeft = image.offsetWidth * ratioX - viewport.clientWidth / 2;
     viewport.scrollTop = image.offsetHeight * ratioY - viewport.clientHeight / 2;
@@ -766,7 +780,7 @@ const EXPORT_FORMAT = 'sweet-afternoon-shift';
 
 function exportData() {
   if (state.dirty) {
-    if (!confirm('保存していない変更があります。保存してから書き出しますか？')) {
+    if (!confirm(TEXTS.confirmSaveBeforeExport)) {
       return;
     }
     if (!saveSchedule()) {
@@ -789,7 +803,7 @@ function exportData() {
   } else {
     downloadFile(file);
   }
-  setStatus(`${Object.keys(data.schedule).length}日分のデータを書き出しました。`);
+  setStatus(TEXTS.exported(Object.keys(data.schedule).length));
 }
 
 function downloadFile(file) {
@@ -830,7 +844,7 @@ async function importData(file) {
     }
   } catch (err) {
     console.error('読み込みに失敗しました', err);
-    setStatus('このファイルは読み込めません。「データを書き出す」で作ったファイルを選んでください。', true);
+    setStatus(TEXTS.importInvalid, true);
     return;
   }
 
@@ -842,18 +856,15 @@ async function importData(file) {
     }
   }
   const count = Object.keys(imported).length;
-  const message =
-    `${count}日分のデータを読み込みます。\n` +
-    '同じ日付の内容は読み込んだデータで上書きされ、それ以外の日付はそのまま残ります。よろしいですか？';
-  if (count === 0 || !confirm(message)) {
+  if (count === 0 || !confirm(TEXTS.confirmImport(count))) {
     if (count === 0) {
-      setStatus('読み込めるデータがありませんでした。', true);
+      setStatus(TEXTS.importEmpty, true);
     }
     return;
   }
   Object.assign(state.schedule, imported);
   if (saveSchedule()) {
-    setStatus(`${count}日分のデータを読み込みました。`);
+    setStatus(TEXTS.imported(count));
   }
   document.getElementById('data-dialog').close();
   selectWeek(state.weekOffset);
@@ -885,17 +896,32 @@ function loadTemplate() {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error('テンプレート画像を読み込めませんでした'));
-    image.src = window.TEMPLATE_IMAGE;
+    image.src = CONFIG.templateImage;
+  });
+}
+
+// index.html 의 data-text / data-text-label / data-text-alt 에 texts.js 의 문구를 넣는다.
+function applyTexts() {
+  document.title = TEXTS.pageTitle;
+  document.querySelectorAll('[data-text]').forEach((node) => {
+    node.textContent = TEXTS[node.dataset.text];
+  });
+  document.querySelectorAll('[data-text-label]').forEach((node) => {
+    node.setAttribute('aria-label', TEXTS[node.dataset.textLabel]);
+  });
+  document.querySelectorAll('[data-text-alt]').forEach((node) => {
+    node.alt = TEXTS[node.dataset.textAlt];
   });
 }
 
 async function init() {
+  applyTexts();
   state.schedule = loadSchedule();
   try {
     state.template = await loadTemplate();
   } catch (err) {
     console.error(err);
-    setStatus('テンプレート画像を読み込めませんでした。js/template.js を確認してください。', true);
+    setStatus(TEXTS.templateFailed, true);
     return;
   }
 

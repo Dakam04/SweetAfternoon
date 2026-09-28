@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [1.8.0] - 2026-09-29
+
+### Added
+- `js/texts.js`: 화면·포스터·확인 창·상태 메시지 문구를 한 곳에 모음. `index.html`은 `data-text` 속성으로 문구를 받음
+- `assets/template.webp`: 템플릿 이미지를 일반 이미지 파일로 분리
+- 설정 `templateImage` (템플릿 이미지 경로)
+- 파일로 직접 열어 이미지를 만들 수 없을 때 안내 메시지 표시
+
+### Changed
+- 배포 방식을 git 서버(https 주소)로 일원화
+
+### Removed
+- `js/template.js` (base64 이미지)
+- `tools/build-single.js` (원파일 만들기)
+
 ## [1.7.0] - 2026-09-29
 
 ### Added

@@ -10,88 +10,88 @@
   <meta name="apple-mobile-web-app-title" content="シフト管理">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#ffffff">
-  <title>シフト管理 | Sweet Afternoon</title>
+  <title></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/config.js" defer></script>
-  <script src="js/template.js" defer></script>
+  <script src="js/texts.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <h1>シフト管理</h1>
-    <nav class="week-nav" aria-label="週の移動">
-      <button type="button" class="week-nav__step" data-week="prev" aria-label="前の週">‹</button>
+    <h1 data-text="appTitle"></h1>
+    <nav class="week-nav" data-text-label="weekNavLabel">
+      <button type="button" class="week-nav__step" data-week="prev" data-text-label="prevWeek">‹</button>
       <p class="week-nav__current" aria-live="polite">
         <span class="week-nav__title" id="week-title"></span>
         <span class="week-nav__range" id="week-range"></span>
       </p>
-      <button type="button" class="week-nav__step" data-week="next" aria-label="次の週">›</button>
-      <button type="button" data-week="today" id="week-today">今週</button>
-      <label class="week-nav__picker">日付で移動 <input type="date" id="week-picker"></label>
+      <button type="button" class="week-nav__step" data-week="next" data-text-label="nextWeek">›</button>
+      <button type="button" data-week="today" id="week-today" data-text="thisWeek"></button>
+      <label class="week-nav__picker"><span data-text="pickDate"></span> <input type="date" id="week-picker"></label>
     </nav>
   </header>
 
   <main class="layout">
-    <section class="poster" aria-label="プレビュー">
+    <section class="poster" data-text-label="posterLabel">
       <canvas id="poster"></canvas>
-      <button type="button" class="poster__zoom">拡大表示</button>
-      <p class="poster__hint">ポスターの枠をタップすると、その日を編集できます。</p>
+      <button type="button" class="poster__zoom" data-text="posterZoom"></button>
+      <p class="poster__hint" data-text="posterHint"></p>
     </section>
 
-    <section class="editor" aria-label="入力">
+    <section class="editor" data-text-label="editorLabel">
       <div class="days" id="days"></div>
     </section>
   </main>
 
-  <dialog class="dialog" id="day-dialog" aria-label="1日の編集">
+  <dialog class="dialog" id="day-dialog" data-text-label="dayDialogLabel">
     <div id="dialog-body"></div>
     <div class="dialog__actions">
-      <button type="button" class="primary" data-action="close-dialog">完了</button>
+      <button type="button" class="primary" data-action="close-dialog" data-text="done"></button>
     </div>
   </dialog>
 
-  <dialog class="image-dialog" id="image-dialog" aria-label="画像プレビュー">
+  <dialog class="image-dialog" id="image-dialog" data-text-label="imageDialogLabel">
     <div class="image-dialog__viewport" id="image-viewport">
-      <img id="image-preview" alt="シフト表の画像プレビュー">
+      <img id="image-preview" alt="" data-text-alt="imageAlt">
     </div>
-    <p class="image-dialog__hint">画像をタップすると拡大・縮小します。スマホの場合は、画像を長押しして写真に保存することもできます。</p>
+    <p class="image-dialog__hint" data-text="imageHint"></p>
     <div class="image-dialog__actions">
-      <button type="button" data-action="toggle-zoom">拡大</button>
-      <button type="button" data-action="close-image">閉じる</button>
-      <a class="button primary" id="image-download">ダウンロード</a>
+      <button type="button" data-action="toggle-zoom" data-text="zoomIn"></button>
+      <button type="button" data-action="close-image" data-text="close"></button>
+      <a class="button primary" id="image-download" data-text="download"></a>
     </div>
   </dialog>
 
   <dialog class="data-dialog" id="data-dialog" aria-labelledby="data-dialog-title">
-    <h2 id="data-dialog-title">データ移行</h2>
-    <p>別のスマホやパソコンにシフトを移すときに使います。</p>
+    <h2 id="data-dialog-title" data-text="dataTitle"></h2>
+    <p data-text="dataIntro"></p>
     <ol class="data-dialog__steps">
-      <li>今の端末で「データを書き出す」を押し、できたファイルを送ります（AirDrop、LINE、メールなど）。</li>
-      <li>移したい端末でこの画面を開き、「データを読み込む」で受け取ったファイルを選びます。</li>
+      <li data-text="dataStepExport"></li>
+      <li data-text="dataStepImport"></li>
     </ol>
-    <p class="data-dialog__note">同じ日付のシフトは読み込んだ内容で上書きされます。それ以外の日付はそのまま残ります。</p>
+    <p class="data-dialog__note" data-text="dataNote"></p>
     <div class="data-dialog__actions">
-      <button type="button" data-action="export" class="primary">データを書き出す</button>
-      <button type="button" data-action="import">データを読み込む</button>
+      <button type="button" data-action="export" class="primary" data-text="dataExport"></button>
+      <button type="button" data-action="import" data-text="dataImport"></button>
       <input type="file" id="import-file" accept=".json,application/json" hidden>
     </div>
     <div class="data-dialog__footer">
-      <button type="button" data-action="close-data">閉じる</button>
+      <button type="button" data-action="close-data" data-text="close"></button>
     </div>
   </dialog>
 
   <footer class="actions">
     <p class="actions__status" id="status" role="status" aria-live="polite"></p>
     <div class="actions__buttons">
-      <button type="button" data-action="copy-prev">前週をコピー</button>
-      <button type="button" data-action="clear">この週をクリア</button>
-      <button type="button" data-action="download">画像プレビュー</button>
-      <button type="button" data-action="print">印刷</button>
-      <button type="button" data-action="data">データ移行</button>
-      <button type="button" data-action="save" class="primary">保存</button>
+      <button type="button" data-action="copy-prev" data-text="copyPrev"></button>
+      <button type="button" data-action="clear" data-text="clearWeek"></button>
+      <button type="button" data-action="download" data-text="imagePreview"></button>
+      <button type="button" data-action="print" data-text="print"></button>
+      <button type="button" data-action="data" data-text="dataMove"></button>
+      <button type="button" data-action="save" class="primary" data-text="save"></button>
     </div>
   </footer>
 </body>

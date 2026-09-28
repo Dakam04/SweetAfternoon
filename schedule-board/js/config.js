@@ -26,6 +26,9 @@ window.BOARD_CONFIG = {
   // 카드 색 (휴무일 바탕)
   toneColors: { pink: '#f1b6cb', blue: '#a9cdee' },
 
+  // 템플릿 이미지 파일. 이미지를 바꿀 때는 assets 폴더의 파일을 덮어쓰거나 이 경로를 바꾼다.
+  templateImage: 'assets/template.png',
+
   // 템플릿 이미지 원본 크기(px)와 카드 위치.
   // heart: 하트 중심 [x, y] / area: 글자가 들어갈 영역 [x, y, 너비, 높이]
   template: { width: 2535, height: 2662 },
