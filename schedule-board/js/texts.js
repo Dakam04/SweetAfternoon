@@ -26,8 +26,6 @@ window.BOARD_TEXTS = {
   posterClosedHeading: '— Holiday —',
   // 이벤트 띠 문구. 예: ♡ 生誕祭 ♡
   posterEvent: (text) => `♡ ${text} ♡`,
-  // 주소에 ?guide 를 붙여 열었을 때
-  guideOn: 'ガイド表示中：枠の位置は js/config.js の cards で調整します。保存画像にはガイドは入りません。',
 
   // ---------- 입력 ----------
   editorLabel: '入力',

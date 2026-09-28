@@ -16,8 +16,6 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 const ROW_FIELDS = ['name', 'time'];
-// 주소에 ?guide 가 있으면 포스터 위에 카드 영역과 좌표를 표시한다.
-const SHOW_GUIDE = new URLSearchParams(window.location.search).has('guide');
 
 const state = {
   weekOffset: 0,
@@ -511,7 +509,7 @@ function fitFont(ctx, text, weight, size, maxWidth) {
   return size;
 }
 
-function drawPoster(withGuide = SHOW_GUIDE) {
+function drawPoster() {
   const canvas = document.getElementById('poster');
   const { width, height } = CONFIG.template;
   canvas.width = width;
@@ -538,97 +536,56 @@ function drawPoster(withGuide = SHOW_GUIDE) {
       drawRows(ctx, area, day.rows.filter((row) => row.name.trim() || row.time.trim()), color);
     }
   });
-
-  if (withGuide) {
-    drawGuide(ctx);
-  }
-}
-
-// 카드마다 글자 영역(점선 사각형)과 하트 중심(십자), 그 좌표를 그린다.
-function drawGuide(ctx) {
-  const label = (text, x, y) => {
-    const width = ctx.measureText(text).width;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(x - 4, y - 4, width + 8, 36);
-    ctx.fillStyle = '#d6004f';
-    ctx.fillText(text, x, y);
-  };
-  ctx.save();
-  ctx.strokeStyle = '#d6004f';
-  ctx.lineWidth = 4;
-  ctx.font = '600 28px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  CONFIG.cards.forEach((card, index) => {
-    const [x, y, w, h] = card.area;
-    const [hx, hy] = card.heart;
-    ctx.setLineDash([16, 10]);
-    ctx.strokeRect(x, y, w, h);
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(hx - 40, hy);
-    ctx.lineTo(hx + 40, hy);
-    ctx.moveTo(hx, hy - 40);
-    ctx.lineTo(hx, hy + 40);
-    ctx.stroke();
-    // 이벤트 띠를 가리지 않도록 영역 아래쪽에 적는다.
-    label(`#${index + 1} area [${x}, ${y}, ${w}, ${h}]`, x + 8, y + h - 40);
-    label(`heart [${hx}, ${hy}]`, hx + 48, hy + 44);
-  });
-  ctx.restore();
 }
 
 function drawHeartNumber(ctx, card, label) {
   const [x, y] = card.heart;
-  const { size, maxWidth, offsetY } = CONFIG.layout.heartNumber;
   ctx.save();
-  fitFont(ctx, label, 700, size, maxWidth);
+  fitFont(ctx, label, 700, 76, 110);
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(120, 60, 90, 0.35)';
   ctx.shadowBlur = 6;
   ctx.shadowOffsetY = 2;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, x, y + offsetY);
+  ctx.fillText(label, x, y + 4);
   ctx.restore();
 }
 
 function drawDateLabel(ctx, card, date, color) {
   const [x, y, w] = card.area;
-  const { size, offsetY } = CONFIG.layout.dateLabel;
-  setFont(ctx, 500, size);
+  setFont(ctx, 500, 34);
   ctx.fillStyle = color;
   ctx.globalAlpha = 0.75;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText(dateLabel(date), x + w, y + offsetY);
+  ctx.fillText(dateLabel(date), x + w, y - 12);
   ctx.globalAlpha = 1;
 }
 
 // 카드 윗부분에 이벤트 띠를 그리고, 남은 글자 영역을 돌려준다.
 function drawEventRibbon(ctx, card, text, color) {
   const [x, y, w, h] = card.area;
-  const { height: ribbonH, top: ribbonTop, size, gap } = CONFIG.layout.eventRibbon;
-  const top = y + ribbonTop;
+  const ribbonH = 66;
+  const top = y + 8;
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.roundRect(x, top, w, ribbonH, ribbonH / 2);
   ctx.fill();
 
   const label = TEXTS.posterEvent(text);
-  fitFont(ctx, label, 700, size, w - 40);
+  fitFont(ctx, label, 700, 36, w - 40);
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(label, x + w / 2, top + ribbonH / 2 + 2);
 
-  const used = ribbonTop + ribbonH + gap;
+  const used = ribbonH + 24;
   return { x, y: y + used, w, h: h - used };
 }
 
 function drawClosed(ctx, card, area, reason, message, color) {
   const { x, y, w, h } = area;
-  const { headingSize, reasonSize, messageSize } = CONFIG.layout.closed;
   const centerX = x + w / 2;
   // 메시지가 없으면 나머지 글자를 조금 내려 가운데를 맞춘다.
   const centerY = y + h / 2 + (message ? 0 : 24);
@@ -652,19 +609,19 @@ function drawClosed(ctx, card, area, reason, message, color) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  setFont(ctx, 500, headingSize);
+  setFont(ctx, 500, 34);
   ctx.globalAlpha = 0.7;
   ctx.fillText(TEXTS.posterClosedHeading, centerX, centerY - 88);
   ctx.globalAlpha = 1;
 
-  fitFont(ctx, reason, 700, reasonSize, w - 40);
+  fitFont(ctx, reason, 700, 66, w - 40);
   ctx.fillText(reason, centerX, centerY - 10);
 
   setFont(ctx, 500, 30);
   ctx.fillText('♡', centerX, centerY + 58);
 
   if (message) {
-    fitFont(ctx, message, 500, messageSize, w - 30);
+    fitFont(ctx, message, 500, 26, w - 30);
     ctx.globalAlpha = 0.8;
     ctx.fillText(message, centerX, centerY + 110);
     ctx.globalAlpha = 1;
@@ -676,9 +633,8 @@ function drawRows(ctx, area, rows, color) {
     return;
   }
   const { x, y, w, h } = area;
-  const { maxSize, lineHeight: lineRatio } = CONFIG.layout.rows;
-  const baseSize = Math.min(maxSize, h / (rows.length * lineRatio));
-  const lineHeight = baseSize * lineRatio;
+  const baseSize = Math.min(44, h / (rows.length * 1.6));
+  const lineHeight = baseSize * 1.6;
   const top = y + (h - lineHeight * rows.length) / 2 + lineHeight / 2;
 
   ctx.fillStyle = color;
@@ -769,19 +725,11 @@ function clearWeek() {
 function openImagePreview() {
   const canvas = document.getElementById('poster');
   try {
-    // 가이드는 저장 이미지에 넣지 않는다. toBlob 은 호출한 순간의 그림을 복사하므로 바로 다시 그려도 된다.
-    if (SHOW_GUIDE) {
-      drawPoster(false);
-    }
     canvas.toBlob(showImagePreview, 'image/png');
   } catch (err) {
     // file:// 로 열면 템플릿 이미지가 다른 출처로 취급되어 SecurityError 가 난다.
     console.error('画像を作成できませんでした', err);
     setStatus(TEXTS.imageBlocked, true);
-  } finally {
-    if (SHOW_GUIDE) {
-      drawPoster();
-    }
   }
 }
 
@@ -979,12 +927,9 @@ async function init() {
 
   selectWeek(0);
   setupCombos();
-  if (SHOW_GUIDE) {
-    setStatus(TEXTS.guideOn);
-  }
   // 웹폰트가 늦게 도착하면 다시 그린다.
   Promise.all([document.fonts.load(`700 40px ${CONFIG.font}`), document.fonts.load(`500 40px ${CONFIG.font}`)])
-    .then(() => drawPoster())
+    .then(drawPoster)
     .catch((err) => console.error('フォントの読み込みに失敗しました', err));
 
   document.querySelector('.week-nav').addEventListener('click', (event) => {
