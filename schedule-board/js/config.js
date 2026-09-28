@@ -7,7 +7,7 @@ window.BOARD_CONFIG = {
   weekStartsOn: 1,
 
   // 하루에 넣을 수 있는 최대 인원
-  maxRows: 6,
+  maxRows: 10,
 
   // 포스터에 찍히는 요일 표기
   weekdayLabels: ['日', '月', '火', '水', '木', '金', '土'],
