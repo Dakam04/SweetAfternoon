@@ -79,9 +79,10 @@ js/app.js           동작 전체
 | `closedMessagePresets` | 휴무 메시지 후보 |
 | `inkColors` | 카드 색(핑크/하늘색)별 글자색 |
 | `toneColors` | 카드 색. 휴무 카드 바탕에 사용 |
-| `templateImage` | 템플릿 이미지 경로 (기본 `assets/template.webp`) |
+| `templateImage` | 템플릿 이미지 경로 (기본 `assets/template.png`) |
 | `template` | 템플릿 이미지 원본 크기(px) |
 | `cards` | 템플릿에서 하트와 글자 영역의 위치(px). 템플릿 이미지를 바꿀 때만 수정 |
+| `layout` | 포스터 글자 크기와 간격 (하트 숫자, 날짜, 이벤트 띠, 근무, 휴무 문구) |
 
 ## 화면 문구 바꾸기 (`js/texts.js`)
 
@@ -94,7 +95,28 @@ js/app.js           동작 전체
 
 ## 템플릿 이미지 교체
 
-1. 새 이미지를 `assets/template.webp`에 덮어씁니다.
-   - png나 jpg를 쓰려면 파일을 `assets/`에 넣고 `js/config.js`의 `templateImage`를 그 경로로 바꿉니다. (예: `'assets/template.png'`)
-2. 이미지 크기나 카드 배치가 달라졌다면 `js/config.js`의 `template`과 `cards` 값도 맞춥니다.
+1. 새 이미지를 `assets/template.png`에 덮어씁니다.
+   - 다른 이름이나 형식(webp, jpg)을 쓰려면 파일을 `assets/`에 넣고 `js/config.js`의 `templateImage`를 그 경로로 바꿉니다.
+2. 카드 배치가 달라졌다면 아래 「위치·크기 맞추기」대로 `cards` 값을 맞춥니다.
+   - 같은 디자인에서 해상도만 바뀐 경우에는 설정을 그대로 둡니다. 이미지는 `template` 크기에 맞춰 늘리거나 줄여서 그려지므로 위치가 그대로 맞습니다.
 3. git 서버에 올린 뒤 새로고침해서 확인합니다. 이전 이미지가 보이면 브라우저 캐시 때문이니 강력 새로고침(`Ctrl+Shift+R`)을 합니다.
+
+## 위치·크기 맞추기
+
+1. 주소 끝에 `?guide`를 붙여 엽니다. (예: `https://…/index.html?guide`)
+   - 포스터 위에 카드마다 글자 영역(빨간 점선 사각형)과 하트 중심(빨간 십자), 그 좌표가 표시됩니다.
+   - 「画像プレビュー」로 저장하는 이미지에는 가이드가 들어가지 않습니다. 인쇄에는 들어가므로 인쇄할 때는 `?guide` 없이 엽니다.
+2. `js/config.js`의 `cards`에서 어긋난 카드의 숫자를 고칩니다. 표시된 `#번호`가 `cards`의 순서(위에서부터 1~7번째)입니다.
+   - `heart: [x, y]`: 하트 중심. 오른쪽·아래로 갈수록 숫자가 커집니다.
+   - `area: [x, y, 너비, 높이]`: 근무·휴무 글자가 들어가는 영역. 날짜(예: 9/28(月))는 이 영역 오른쪽 위에 붙습니다.
+3. 저장하고 새로고침해서 다시 확인합니다.
+
+글자 크기와 간격은 `js/config.js`의 `layout`에서 바꿉니다. 숫자는 모두 템플릿 원본 기준 px입니다.
+
+| 항목 | 설명 |
+|---|---|
+| `heartNumber` | 하트 안 숫자. `size` 크기, `maxWidth` 최대 폭(넘으면 자동 축소), `offsetY` 하트 중심에서 아래로 이동 |
+| `dateLabel` | 날짜. `size` 크기, `offsetY` 영역 위쪽 기준 위치(음수면 위로) |
+| `eventRibbon` | 이벤트 띠. `height` 높이, `top` 영역 위쪽에서 띠까지, `size` 글자 크기, `gap` 띠와 근무 글자 사이 |
+| `rows` | 근무 글자. `maxSize` 최대 크기(인원이 많으면 자동 축소), `lineHeight` 줄 간격(글자 크기의 배수) |
+| `closed` | 휴무 카드. `headingSize` 「— Holiday —」, `reasonSize` 휴무 이유, `messageSize` 메시지 |

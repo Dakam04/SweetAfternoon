@@ -31,6 +31,7 @@ window.BOARD_CONFIG = {
 
   // 템플릿 이미지 원본 크기(px)와 카드 위치.
   // heart: 하트 중심 [x, y] / area: 글자가 들어갈 영역 [x, y, 너비, 높이]
+  // 위치를 맞출 때는 주소 끝에 ?guide 를 붙여 열면 영역과 좌표가 포스터 위에 표시된다.
   template: { width: 2535, height: 2662 },
   cards: [
     { tone: 'pink', heart: [186, 850], area: [150, 950, 427, 450] },
@@ -41,4 +42,18 @@ window.BOARD_CONFIG = {
     { tone: 'blue', heart: [1092, 1634], area: [1031, 1735, 481, 450] },
     { tone: 'pink', heart: [1694, 1634], area: [1633, 1735, 482, 450] },
   ],
+
+  // 포스터 글자 크기와 간격 (px, 템플릿 원본 기준)
+  layout: {
+    // 하트 안 날짜 숫자. 폭이 maxWidth 를 넘으면 자동으로 줄어든다. offsetY 는 하트 중심에서 아래로.
+    heartNumber: { size: 76, maxWidth: 110, offsetY: 4 },
+    // 글자 영역 오른쪽 위의 날짜 (예: 9/28(月)). offsetY 는 영역 위쪽 기준, 음수면 위로.
+    dateLabel: { size: 34, offsetY: -12 },
+    // 이벤트 띠. top 은 영역 위쪽에서 띠까지, gap 은 띠 아래와 근무 글자 사이.
+    eventRibbon: { height: 66, top: 8, size: 36, gap: 16 },
+    // 근무 글자. 인원이 많으면 maxSize 에서 자동으로 줄어든다. lineHeight 는 글자 크기의 배수.
+    rows: { maxSize: 44, lineHeight: 1.6 },
+    // 휴무 카드 글자 (— Holiday —, 휴무 이유, 메시지)
+    closed: { headingSize: 34, reasonSize: 66, messageSize: 26 },
+  },
 };
