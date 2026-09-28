@@ -1,0 +1,274 @@
+diff -ruN -x template.js a/CHANGELOG.md board/CHANGELOG.md
+--- a/CHANGELOG.md	2026-09-28 15:34:16.281820258 +0000
++++ b/CHANGELOG.md	2026-09-28 15:35:09.980968478 +0000
+@@ -1,5 +1,14 @@
+ # CHANGELOG
+ 
++## [1.5.0] - 2026-09-28
++
++### Changed
++- 주 선택을 탭 목록에서 「‹」「›」(한 주씩 이동), 「今週」(이번 주로), 「日付で移動」(날짜로 이동)으로 변경. 기간 제한 없음
++- 현재 주 표시에 이번 주와의 거리 표기 추가 (예: 「(3週前)」)
++
++### Removed
++- 주 탭 목록과 설정 `pastWeeks`, `futureWeeks`
++
+ ## [1.4.0] - 2026-09-28
+ 
+ ### Added
+diff -ruN -x template.js a/README.md board/README.md
+--- a/README.md	2026-09-28 15:34:16.281794100 +0000
++++ b/README.md	2026-09-28 15:35:09.980766786 +0000
+@@ -5,7 +5,7 @@
+ ## 사용법
+ 
+ 1. `index.html`을 Chrome, Edge, Safari 중 하나로 엽니다.
+-2. 위쪽 탭에서 주를 고릅니다. 기본으로 「4週前」부터 「来週」까지 나오고, 주는 오늘 날짜를 기준으로 자동 계산됩니다. 탭이 화면보다 넓으면 옆으로 밀어서 봅니다.
++2. 위쪽 「‹」「›」로 한 주씩 이동합니다. 기간 제한 없이 과거·미래 어느 주든 볼 수 있습니다. 「今週」를 누르면 이번 주로 돌아오고, 「日付で移動」에서 날짜를 고르면 그 날짜가 들어 있는 주로 바로 이동합니다. 주는 오늘 날짜를 기준으로 자동 계산되고, 주 표시 아래에 「(3週前)」처럼 이번 주와의 거리가 나옵니다.
+    - 포스터 오른쪽 위 「拡大表示」를 누르면 포스터를 크게 볼 수 있습니다. 창 안에서 이미지를 누르면 원본 크기로 확대되고, 다시 누르면 전체 보기로 돌아옵니다.
+ 3. 포스터의 칸을 누르면 그날의 편집 창이 뜹니다. 아래(PC에서는 오른쪽) 목록에서 바로 입력해도 됩니다.
+    - 하트 안의 숫자는 날짜가 자동으로 들어갑니다.
+@@ -46,7 +46,6 @@
+ | 항목 | 설명 |
+ |---|---|
+ | `weekStartsOn` | 주 시작 요일. 0=일, 1=월 … 6=토 |
+-| `pastWeeks` / `futureWeeks` | 탭에 보여줄 주 범위. 이번 주 기준 몇 주 전부터 몇 주 후까지 (기본 4 / 1) |
+ | `maxRows` | 하루 최대 인원 (기본 6) |
+ | `closedLabel` | 휴무 이유를 비웠을 때의 문구 (기본 「お休み」) |
+ | `closedMessage` | 휴무일 기본 메시지 (기본 공백 = 표시 안 함). 날짜별로 입력한 메시지가 우선 |
+diff -ruN -x template.js a/css/style.css board/css/style.css
+--- a/css/style.css	2026-09-28 15:34:16.281728961 +0000
++++ b/css/style.css	2026-09-28 15:34:39.198233470 +0000
+@@ -83,34 +83,56 @@
+   color: var(--ink);
+ }
+ 
+-.topbar__week {
++.week-nav {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 8px;
++  margin-left: auto;
++}
++
++.week-nav__step {
++  width: 40px;
++  height: 40px;
++  padding: 0;
++  font-size: 22px;
++  line-height: 1;
++}
++
++.week-nav__current {
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  min-width: 11em;
+   margin: 0;
++  line-height: 1.35;
++}
++
++.week-nav__title {
++  font-weight: 600;
++  color: var(--pink-ink);
++}
++
++.week-nav__range {
++  font-size: 13px;
+   color: var(--muted);
+-  white-space: pre;
+ }
+ 
+-.tabs {
++.week-nav__picker {
+   display: flex;
++  align-items: center;
+   gap: 6px;
+-  max-width: 100%;
+-  margin-left: auto;
+-  padding-bottom: 2px;
+-  overflow-x: auto;
+-  scrollbar-width: thin;
+-}
+-
+-.tabs button {
+-  flex: 0 0 auto;
+-  padding: 6px 16px;
+   font-size: 13px;
+-  line-height: 1.35;
+-  white-space: pre-line;
++  color: var(--muted);
+ }
+ 
+-.tabs button[aria-pressed="true"] {
+-  color: #fff;
+-  background: var(--pink-ink);
+-  border-color: var(--pink-ink);
++.week-nav__picker input {
++  min-height: 36px;
++  padding: 4px 8px;
++  font: inherit;
++  color: var(--text);
++  border: 1px solid var(--line);
++  border-radius: 8px;
+ }
+ 
+ /* ---------- 본문 ---------- */
+@@ -473,14 +495,14 @@
+     position: relative;
+   }
+ 
+-  .tabs {
++  .week-nav {
+     width: 100%;
+     margin-left: 0;
+   }
+ 
+-  .tabs button {
+-    min-width: 96px;
+-    padding: 6px 8px;
++  .week-nav__current {
++    flex: 1;
++    min-width: 0;
+   }
+ 
+   .actions {
+diff -ruN -x template.js "a/docs/devlogs/20260928/DEVLOG-20260928-007_\354\243\274\354\235\264\353\217\231\353\260\251\354\213\235\353\263\200\352\262\275.md" "board/docs/devlogs/20260928/DEVLOG-20260928-007_\354\243\274\354\235\264\353\217\231\353\260\251\354\213\235\353\263\200\352\262\275.md"
+--- "a/docs/devlogs/20260928/DEVLOG-20260928-007_\354\243\274\354\235\264\353\217\231\353\260\251\354\213\235\353\263\200\352\262\275.md"	1970-01-01 00:00:00.000000000 +0000
++++ "board/docs/devlogs/20260928/DEVLOG-20260928-007_\354\243\274\354\235\264\353\217\231\353\260\251\354\213\235\353\263\200\352\262\275.md"	2026-09-28 15:35:09.983976481 +0000
+@@ -0,0 +1,15 @@
++# DEVLOG-20260928-007 주 이동 방식 변경
++
++## 요청
++탭 개수를 늘리지 말고, 언제든(어느 주든) 볼 수 있게.
++
++## 조치
++- 탭 목록(`renderTabs`)과 설정 `pastWeeks`/`futureWeeks` 삭제.
++- `renderWeekNav()`: 현재 주 제목, 기간, 이번 주와의 거리(`relativeWeekLabel`), 「今週」 버튼 활성 여부, 날짜 입력값을 갱신.
++- 「‹」「›」는 `weekOffset`을 ±1, 「今週」는 0으로 설정. 범위 제한 없음.
++- 「日付で移動」: 고른 날짜가 속한 주의 오프셋을 `weekOffsetOf()`로 계산 (UTC 기준 날짜 차이로 계산해 서머타임 영향 없음).
++- 데이터는 원래 날짜 키로 저장되므로 저장 구조 변경 없음.
++
++## 검증
++- 이전 10회 → 7/20〜7/26(10週前), 날짜 2025-12-25 → 12/22〜12/28(40週前), 2027-03-01 → 3/1〜3/7(22週後), 다음 → 3/8〜, 今週 → 9/28〜10/4, 今週 버튼은 이번 주일 때 비활성.
++- PC, 태블릿 세로(820px), 휴대폰(390px) 배치 확인.
+diff -ruN -x template.js a/index.html board/index.html
+--- a/index.html	2026-09-28 15:34:16.281775414 +0000
++++ b/index.html	2026-09-28 15:34:39.197730050 +0000
+@@ -16,8 +16,16 @@
+ <body>
+   <header class="topbar">
+     <h1>シフト管理</h1>
+-    <p class="topbar__week" id="week-label"></p>
+-    <nav class="tabs" id="week-tabs" aria-label="週の選択"></nav>
++    <nav class="week-nav" aria-label="週の移動">
++      <button type="button" class="week-nav__step" data-week="prev" aria-label="前の週">‹</button>
++      <p class="week-nav__current" aria-live="polite">
++        <span class="week-nav__title" id="week-title"></span>
++        <span class="week-nav__range" id="week-range"></span>
++      </p>
++      <button type="button" class="week-nav__step" data-week="next" aria-label="次の週">›</button>
++      <button type="button" data-week="today" id="week-today">今週</button>
++      <label class="week-nav__picker">日付で移動 <input type="date" id="week-picker"></label>
++    </nav>
+   </header>
+ 
+   <main class="layout">
+diff -ruN -x template.js a/js/app.js board/js/app.js
+--- a/js/app.js	2026-09-28 15:34:16.281664280 +0000
++++ b/js/app.js	2026-09-28 15:34:39.198086217 +0000
+@@ -132,7 +132,8 @@
+ 
+ // ---------- 주 탭 ----------
+ 
+-function weekTabLabel(offset) {
++// 이번 주 기준 상대 표기 (今週, 3週前, 2週後 …)
++function relativeWeekLabel(offset) {
+   const names = { '-1': '先週', 0: '今週', 1: '来週', 2: '再来週' };
+   if (names[offset]) {
+     return names[offset];
+@@ -140,26 +141,19 @@
+   return offset < 0 ? `${-offset}週前` : `${offset}週後`;
+ }
+ 
+-function renderTabs() {
+-  const nav = document.getElementById('week-tabs');
+-  const offsets = [];
+-  for (let offset = -CONFIG.pastWeeks; offset <= CONFIG.futureWeeks; offset += 1) {
+-    offsets.push(offset);
+-  }
+-  nav.replaceChildren(
+-    ...offsets.map((offset) => {
+-      const button = document.createElement('button');
+-      button.type = 'button';
+-      button.dataset.offset = String(offset);
+-      button.setAttribute('aria-pressed', String(offset === state.weekOffset));
+-      button.textContent = `${weekTabLabel(offset)}\n${weekTitle(offset).range}`;
+-      return button;
+-    }),
+-  );
+-  // 탭이 화면보다 넓으면 가로로 스크롤되므로, 선택한 탭이 보이게 옮긴다.
+-  nav.querySelector('[aria-pressed="true"]').scrollIntoView({ block: 'nearest', inline: 'center' });
++// 고른 날짜가 이번 주에서 몇 주 떨어져 있는지 계산한다.
++function weekOffsetOf(date) {
++  const oneWeek = 7 * 24 * 60 * 60 * 1000;
++  const toUtc = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
++  return Math.round((toUtc(startOfWeek(date)) - toUtc(startOfWeek(new Date()))) / oneWeek);
++}
++
++function renderWeekNav() {
+   const { title, range } = weekTitle(state.weekOffset);
+-  document.getElementById('week-label').textContent = `${title}  ${range}`;
++  document.getElementById('week-title').textContent = title;
++  document.getElementById('week-range').textContent = `${range}（${relativeWeekLabel(state.weekOffset)}）`;
++  document.getElementById('week-today').disabled = state.weekOffset === 0;
++  document.getElementById('week-picker').value = toKey(weekStart(state.weekOffset));
+ }
+ 
+ // ---------- 입력 화면 ----------
+@@ -763,7 +757,7 @@
+ 
+ function selectWeek(offset) {
+   state.weekOffset = offset;
+-  renderTabs();
++  renderWeekNav();
+   renderEditor();
+   drawPoster();
+ }
+@@ -794,10 +788,17 @@
+     .then(drawPoster)
+     .catch((err) => console.error('フォントの読み込みに失敗しました', err));
+ 
+-  document.getElementById('week-tabs').addEventListener('click', (event) => {
+-    const button = event.target.closest('button[data-offset]');
+-    if (button) {
+-      selectWeek(Number(button.dataset.offset));
++  document.querySelector('.week-nav').addEventListener('click', (event) => {
++    const move = event.target.closest('button[data-week]')?.dataset.week;
++    const next = { prev: state.weekOffset - 1, next: state.weekOffset + 1, today: 0 }[move];
++    if (next !== undefined) {
++      selectWeek(next);
++    }
++  });
++  document.getElementById('week-picker').addEventListener('change', (event) => {
++    if (event.target.value) {
++      const [y, m, d] = event.target.value.split('-').map(Number);
++      selectWeek(weekOffsetOf(new Date(y, m - 1, d)));
+     }
+   });
+ 
+diff -ruN -x template.js a/js/config.js board/js/config.js
+--- a/js/config.js	2026-09-28 15:34:16.281644425 +0000
++++ b/js/config.js	2026-09-28 15:34:39.197607611 +0000
+@@ -6,10 +6,6 @@
+   // 한 주의 시작 요일 (0=일, 1=월, … 6=토). 템플릿 첫 번째 카드가 이 요일이 된다.
+   weekStartsOn: 1,
+ 
+-  // 위쪽 탭에 보여줄 주의 범위: 이번 주 기준 몇 주 전부터 몇 주 후까지
+-  pastWeeks: 4,
+-  futureWeeks: 1,
+-
+   // 하루에 넣을 수 있는 최대 인원
+   maxRows: 6,
+ 

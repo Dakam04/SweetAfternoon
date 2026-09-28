@@ -1,0 +1,310 @@
+diff -ruN -x template.js a/CHANGELOG.md board/CHANGELOG.md
+--- a/CHANGELOG.md	2026-09-28 15:20:56.674301112 +0000
++++ b/CHANGELOG.md	2026-09-28 15:21:42.182354817 +0000
+@@ -1,5 +1,14 @@
+ # CHANGELOG
+ 
++## [1.2.1] - 2026-09-28
++
++### Changed
++- 근무 표시를 점선 방식(이름 왼쪽, 시간 오른쪽, 사이 점선)으로 되돌림
++- 글자색을 카드 색(핑크/하늘색)에 맞춘 고정색으로 되돌림
++
++### Removed
++- 「文字色」 선택 기능과 설정 저장(`settingsKey`)
++
+ ## [1.2.0] - 2026-09-28
+ 
+ ### Added
+diff -ruN -x template.js a/README.md board/README.md
+--- a/README.md	2026-09-28 15:20:56.674209674 +0000
++++ b/README.md	2026-09-28 15:21:42.182175938 +0000
+@@ -11,8 +11,7 @@
+    - 「お休み」: 켜면 근무 입력 대신 「お休みの理由」가 나옵니다. 定休日, 臨時休業 등 후보에서 고르거나 직접 입력합니다. 비워 두면 「お休み」로 표시됩니다.
+    - 「イベント」: 입력하면 카드 위쪽에 띠로 표시됩니다.
+    - 이름 칸: 누르면 지금까지 입력한 이름 목록이 나옵니다. 글자를 치면 목록이 좁혀지고, 목록에 없는 이름은 그대로 입력하면 됩니다.
+-4. 위쪽 「文字色」에서 포스터 글자색(プラム, コーラル, レッド)을 고릅니다. 이 선택은 바로 저장됩니다.
+-5. 아래 버튼을 사용합니다.
++4. 아래 버튼을 사용합니다.
+ 
+ | 버튼 | 동작 |
+ |---|---|
+@@ -50,7 +49,7 @@
+ | `closedLabel` | 휴무 이유를 비웠을 때의 문구 (기본 「お休み」) |
+ | `closedMessage` | 휴무 카드 아래 작은 문구 |
+ | `closedPresets` | 휴무 이유 후보 |
+-| `textColors` | 글자색 후보 (이름과 색상 코드) |
++| `inkColors` | 카드 색(핑크/하늘색)별 글자색 |
+ | `toneColors` | 카드 색. 휴무 카드 바탕에 사용 |
+ | `cards` | 템플릿에서 하트와 글자 영역의 위치(px). 템플릿 이미지를 바꿀 때만 수정 |
+ 
+diff -ruN -x template.js a/css/style.css board/css/style.css
+--- a/css/style.css	2026-09-28 15:20:56.673875921 +0000
++++ b/css/style.css	2026-09-28 15:20:56.710714534 +0000
+@@ -23,8 +23,7 @@
+ }
+ 
+ button,
+-input,
+-select {
++input {
+   font: inherit;
+ }
+ 
+@@ -88,23 +87,6 @@
+   margin-left: auto;
+ }
+ 
+-.topbar__color {
+-  display: flex;
+-  align-items: center;
+-  gap: 6px;
+-  font-size: 14px;
+-  color: var(--muted);
+-}
+-
+-.topbar__color select {
+-  min-height: 36px;
+-  padding: 4px 8px;
+-  color: var(--ink);
+-  background: #fff;
+-  border: 1px solid var(--line);
+-  border-radius: 8px;
+-}
+-
+ .tabs button {
+   padding: 6px 16px;
+   font-size: 13px;
+diff -ruN -x template.js "a/docs/devlogs/20260928/DEVLOG-20260928-003_\354\240\220\354\204\240\353\263\265\354\233\220_\352\270\200\354\236\220\354\203\211\354\204\240\355\203\235\354\240\234\352\261\260.md" "board/docs/devlogs/20260928/DEVLOG-20260928-003_\354\240\220\354\204\240\353\263\265\354\233\220_\352\270\200\354\236\220\354\203\211\354\204\240\355\203\235\354\240\234\352\261\260.md"
+--- "a/docs/devlogs/20260928/DEVLOG-20260928-003_\354\240\220\354\204\240\353\263\265\354\233\220_\352\270\200\354\236\220\354\203\211\354\204\240\355\203\235\354\240\234\352\261\260.md"	1970-01-01 00:00:00.000000000 +0000
++++ "board/docs/devlogs/20260928/DEVLOG-20260928-003_\354\240\220\354\204\240\353\263\265\354\233\220_\352\270\200\354\236\220\354\203\211\354\204\240\355\203\235\354\240\234\352\261\260.md"	2026-09-28 15:21:42.185631902 +0000
+@@ -0,0 +1,14 @@
++# DEVLOG-20260928-003 점선 복원, 글자색 선택 제거
++
++## 원인
++v1.2.0에서 참고 이미지를 "명조 굵은체 + 진한 글자색 + 가운데 정렬"로 해석해 점선을 없애고 글자색 선택을 추가했음.
++사용자 확인 결과 참고 이미지의 의도는 글자색이 아니라 이미지 배경색 변경이었고, 이 기능은 넣지 않기로 함.
++
++## 조치
++- `drawRows()`: 점선 방식으로 복원. 명조 굵은체는 유지. 좁은 카드에서도 점선이 보이도록 기본 글자 크기 48→44, 점선 표시 최소 길이 size→size*0.5.
++- 글자색 선택 UI, `settingsKey`, `textColors`, `state.settings`, `saveSettings()`, `renderColorSelect()` 제거.
++- 글자색은 `inkColors`(카드 색별 고정색)로 지정.
++
++## 검증
++- 이전 버전의 설정 키(`sweet-afternoon-schedule:settings`)가 localStorage에 남아 있어도 오류 없이 동작함을 확인.
++- PNG 출력에서 7개 카드 모두 점선 표시 확인.
+diff -ruN -x template.js a/index.html board/index.html
+--- a/index.html	2026-09-28 15:20:56.674138387 +0000
++++ b/index.html	2026-09-28 15:20:56.710570120 +0000
+@@ -18,7 +18,6 @@
+     <h1>シフト管理</h1>
+     <p class="topbar__week" id="week-label"></p>
+     <nav class="tabs" id="week-tabs" aria-label="週の選択"></nav>
+-    <label class="topbar__color">文字色 <select id="text-color"></select></label>
+   </header>
+ 
+   <main class="layout">
+diff -ruN -x template.js a/js/app.js board/js/app.js
+--- a/js/app.js	2026-09-28 15:20:56.673378501 +0000
++++ b/js/app.js	2026-09-28 15:21:21.812411413 +0000
+@@ -12,7 +12,6 @@
+   weekOffset: 0,
+   // { 'YYYY-MM-DD': { closed, closedNote, event, heart, rows: [{ name, time }] } }
+   schedule: {},
+-  settings: { textColor: CONFIG.textColors[0].value },
+   dirty: false,
+   template: null,
+ };
+@@ -70,18 +69,14 @@
+   return { closed: false, closedNote: '', event: '', heart: '', rows: [] };
+ }
+ 
+-function loadJson(key, fallback) {
++function loadSchedule() {
++  let saved = {};
+   try {
+-    return JSON.parse(localStorage.getItem(key)) || fallback;
++    saved = JSON.parse(localStorage.getItem(CONFIG.storageKey)) || {};
+   } catch (err) {
+-    console.error(`${key} の読み込みに失敗しました`, err);
+-    return fallback;
++    console.error('保存されたシフトを読み込めませんでした', err);
+   }
+-}
+-
+-function loadSchedule() {
+   // 예전 버전 데이터에는 없는 필드가 있으므로 기본값을 채운다.
+-  const saved = loadJson(CONFIG.storageKey, {});
+   for (const key of Object.keys(saved)) {
+     saved[key] = { ...emptyDay(), ...saved[key] };
+   }
+@@ -109,14 +104,6 @@
+   setStatus('保存しました。');
+ }
+ 
+-function saveSettings() {
+-  try {
+-    localStorage.setItem(CONFIG.settingsKey, JSON.stringify(state.settings));
+-  } catch (err) {
+-    console.error('設定の保存に失敗しました', err);
+-  }
+-}
+-
+ function getDay(key) {
+   if (!state.schedule[key]) {
+     state.schedule[key] = emptyDay();
+@@ -144,7 +131,7 @@
+   drawPoster();
+ }
+ 
+-// ---------- 주 탭, 글자색 ----------
++// ---------- 주 탭 ----------
+ 
+ function renderTabs() {
+   const nav = document.getElementById('week-tabs');
+@@ -162,12 +149,6 @@
+   document.getElementById('week-label').textContent = `${title}  ${range}`;
+ }
+ 
+-function renderColorSelect() {
+-  const select = document.getElementById('text-color');
+-  select.replaceChildren(...CONFIG.textColors.map((color) => new Option(color.name, color.value)));
+-  select.value = state.settings.textColor;
+-}
+-
+ // ---------- 입력 화면 ----------
+ 
+ function renderEditor() {
+@@ -501,10 +482,10 @@
+   canvas.height = height;
+   const ctx = canvas.getContext('2d');
+   ctx.drawImage(state.template, 0, 0, width, height);
+-  const color = state.settings.textColor;
+ 
+   weekDates(state.weekOffset).forEach((date, index) => {
+     const card = CONFIG.cards[index];
++    const color = CONFIG.inkColors[card.tone];
+     const day = state.schedule[toKey(date)] || emptyDay();
+     const [x, y, w, h] = card.area;
+     let area = { x, y, w, h };
+@@ -613,33 +594,51 @@
+     return;
+   }
+   const { x, y, w, h } = area;
+-  const baseSize = Math.min(56, h / (rows.length * 1.5));
+-  const lineHeight = baseSize * 1.5;
++  const baseSize = Math.min(44, h / (rows.length * 1.6));
++  const lineHeight = baseSize * 1.6;
+   const top = y + (h - lineHeight * rows.length) / 2 + lineHeight / 2;
+ 
+   ctx.fillStyle = color;
++  ctx.strokeStyle = color;
+   ctx.textBaseline = 'middle';
+-  ctx.textAlign = 'left';
+ 
+   rows.forEach((row, i) => {
+     const centerY = top + i * lineHeight;
+     const name = row.name.trim();
+     const time = row.time.trim();
+ 
+-    // 이름과 시간을 한 덩어리로 가운데 정렬하고, 넘치면 글자를 줄인다.
++    // 이름과 시간이 한 줄에 다 들어가도록 글자 크기를 줄인다.
+     let size = baseSize;
+     setFont(ctx, 700, size);
+-    let gap = size * 0.6;
+-    const total = ctx.measureText(name).width + gap + ctx.measureText(time).width;
+-    if (total > w) {
+-      size *= w / total;
++    const needed = ctx.measureText(name).width + ctx.measureText(time).width + size * 1.5;
++    if (needed > w) {
++      size *= w / needed;
+       setFont(ctx, 700, size);
+-      gap = size * 0.6;
+     }
++
++    // 이름은 왼쪽, 시간은 오른쪽, 그 사이를 점선으로 잇는다.
+     const nameWidth = ctx.measureText(name).width;
+-    const start = x + (w - (nameWidth + gap + ctx.measureText(time).width)) / 2;
+-    ctx.fillText(name, start, centerY);
+-    ctx.fillText(time, start + nameWidth + gap, centerY);
++    const timeWidth = ctx.measureText(time).width;
++    ctx.textAlign = 'left';
++    ctx.fillText(name, x, centerY);
++    ctx.textAlign = 'right';
++    ctx.fillText(time, x + w, centerY);
++
++    const gap = size * 0.4;
++    const leaderStart = x + nameWidth + gap;
++    const leaderEnd = x + w - timeWidth - gap;
++    if (leaderEnd - leaderStart > size * 0.5) {
++      ctx.save();
++      ctx.globalAlpha = 0.4;
++      ctx.lineWidth = size * 0.1;
++      ctx.lineCap = 'round';
++      ctx.setLineDash([0.1, size * 0.28]);
++      ctx.beginPath();
++      ctx.moveTo(leaderStart, centerY + size * 0.3);
++      ctx.lineTo(leaderEnd, centerY + size * 0.3);
++      ctx.stroke();
++      ctx.restore();
++    }
+   });
+ }
+ 
+@@ -722,7 +721,6 @@
+ 
+ async function init() {
+   state.schedule = loadSchedule();
+-  state.settings = { ...state.settings, ...loadJson(CONFIG.settingsKey, {}) };
+   try {
+     state.template = await loadTemplate();
+   } catch (err) {
+@@ -731,7 +729,6 @@
+     return;
+   }
+ 
+-  renderColorSelect();
+   selectWeek(0);
+   setupCombos();
+   // 웹폰트가 늦게 도착하면 다시 그린다.
+@@ -745,11 +742,6 @@
+       selectWeek(Number(button.dataset.offset));
+     }
+   });
+-  document.getElementById('text-color').addEventListener('change', (event) => {
+-    state.settings.textColor = event.target.value;
+-    saveSettings();
+-    drawPoster();
+-  });
+ 
+   const dialog = document.getElementById('day-dialog');
+   for (const container of [document.getElementById('days'), dialog]) {
+diff -ruN -x template.js a/js/config.js board/js/config.js
+--- a/js/config.js	2026-09-28 15:20:56.673249786 +0000
++++ b/js/config.js	2026-09-28 15:20:56.710433331 +0000
+@@ -2,7 +2,6 @@
+ window.BOARD_CONFIG = {
+   // localStorage 키. 바꾸면 기존에 저장한 스케줄이 보이지 않게 되므로 주의.
+   storageKey: 'sweet-afternoon-schedule:v1',
+-  settingsKey: 'sweet-afternoon-schedule:settings',
+ 
+   // 한 주의 시작 요일 (0=일, 1=월, … 6=토). 템플릿 첫 번째 카드가 이 요일이 된다.
+   weekStartsOn: 1,
+@@ -19,14 +18,10 @@
+   // 휴무 이유 입력칸의 기본 후보 (입력했던 이유도 자동으로 후보에 추가됨)
+   closedPresets: ['定休日', '臨時休業', '貸切営業', '店内メンテナンス'],
+ 
+-  // 포스터 글꼴과 글자색 후보 (화면 위쪽 「文字色」에서 선택)
+   font: '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif',
+-  textColors: [
+-    { name: 'プラム', value: '#8b4766' },
+-    { name: 'コーラル', value: '#d9555a' },
+-    { name: 'レッド', value: '#b3161c' },
+-  ],
+-  // 카드 색 (휴무일 바탕, 이벤트 띠에 사용)
++  // 카드 색에 맞춘 글자색 (근무, 날짜, 이벤트 띠, 휴무 문구)
++  inkColors: { pink: '#a94f71', blue: '#3f64a0' },
++  // 카드 색 (휴무일 바탕)
+   toneColors: { pink: '#f1b6cb', blue: '#a9cdee' },
+ 
+   // 템플릿 이미지 원본 크기(px)와 카드 위치.

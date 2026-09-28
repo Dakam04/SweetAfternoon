@@ -1,0 +1,631 @@
+diff -ruN -x template.js a/CHANGELOG.md board/CHANGELOG.md
+--- a/CHANGELOG.md	2026-09-28 15:31:23.840101140 +0000
++++ b/CHANGELOG.md	2026-09-28 15:32:35.053363996 +0000
+@@ -1,5 +1,16 @@
+ # CHANGELOG
+ 
++## [1.4.0] - 2026-09-28
++
++### Added
++- 지난 주 보기: 탭 범위를 설정(`pastWeeks`, `futureWeeks`)으로 조절. 기본 4週前〜来週
++- 포스터 「拡大表示」 버튼
++- 이미지 미리보기 확대·축소 (이미지 탭 또는 「拡大」 버튼, 원본 크기로 보고 스크롤)
++
++### Changed
++- 주 탭이 넘치면 가로 스크롤, 선택한 탭이 보이도록 자동 이동
++- 이미지 미리보기 창 최대 폭 900px → 1100px
++
+ ## [1.3.1] - 2026-09-28
+ 
+ ### Added
+diff -ruN -x template.js a/README.md board/README.md
+--- a/README.md	2026-09-28 15:31:23.840086940 +0000
++++ b/README.md	2026-09-28 15:32:35.053225457 +0000
+@@ -5,7 +5,8 @@
+ ## 사용법
+ 
+ 1. `index.html`을 Chrome, Edge, Safari 중 하나로 엽니다.
+-2. 위쪽 탭에서 「先週」「今週」「来週」 중 하나를 고릅니다. 주는 오늘 날짜를 기준으로 자동 계산됩니다.
++2. 위쪽 탭에서 주를 고릅니다. 기본으로 「4週前」부터 「来週」까지 나오고, 주는 오늘 날짜를 기준으로 자동 계산됩니다. 탭이 화면보다 넓으면 옆으로 밀어서 봅니다.
++   - 포스터 오른쪽 위 「拡大表示」를 누르면 포스터를 크게 볼 수 있습니다. 창 안에서 이미지를 누르면 원본 크기로 확대되고, 다시 누르면 전체 보기로 돌아옵니다.
+ 3. 포스터의 칸을 누르면 그날의 편집 창이 뜹니다. 아래(PC에서는 오른쪽) 목록에서 바로 입력해도 됩니다.
+    - 하트 안의 숫자는 날짜가 자동으로 들어갑니다.
+    - 「お休み」: 켜면 근무 입력 대신 「お休みの理由」와 「メッセージ（任意）」가 나옵니다. 이유는 定休日, 臨時休業 등 후보에서 고르거나 직접 입력하고, 비워 두면 「お休み」로 표시됩니다. 메시지는 기본으로 비어 있고, 입력한 날에만 카드 아래쪽에 작게 표시됩니다. 모든 휴무일에 같은 메시지를 쓰려면 설정의 `closedMessage`에 넣습니다.
+@@ -45,6 +46,7 @@
+ | 항목 | 설명 |
+ |---|---|
+ | `weekStartsOn` | 주 시작 요일. 0=일, 1=월 … 6=토 |
++| `pastWeeks` / `futureWeeks` | 탭에 보여줄 주 범위. 이번 주 기준 몇 주 전부터 몇 주 후까지 (기본 4 / 1) |
+ | `maxRows` | 하루 최대 인원 (기본 6) |
+ | `closedLabel` | 휴무 이유를 비웠을 때의 문구 (기본 「お休み」) |
+ | `closedMessage` | 휴무일 기본 메시지 (기본 공백 = 표시 안 함). 날짜별로 입력한 메시지가 우선 |
+diff -ruN -x template.js a/css/style.css board/css/style.css
+--- a/css/style.css	2026-09-28 15:31:23.840056280 +0000
++++ b/css/style.css	2026-09-28 15:32:46.875835137 +0000
+@@ -91,12 +91,16 @@
+ 
+ .tabs {
+   display: flex;
+-  flex-wrap: wrap;
+   gap: 6px;
++  max-width: 100%;
+   margin-left: auto;
++  padding-bottom: 2px;
++  overflow-x: auto;
++  scrollbar-width: thin;
+ }
+ 
+ .tabs button {
++  flex: 0 0 auto;
+   padding: 6px 16px;
+   font-size: 13px;
+   line-height: 1.35;
+@@ -124,6 +128,15 @@
+   top: 20px;
+ }
+ 
++.poster__zoom {
++  position: absolute;
++  top: 10px;
++  right: 10px;
++  padding: 6px 12px;
++  font-size: 13px;
++  background: rgb(255 255 255 / 0.92);
++}
++
+ .poster canvas {
+   display: block;
+   width: 100%;
+@@ -353,7 +366,7 @@
+ /* ---------- 이미지 미리보기 ---------- */
+ 
+ .image-dialog {
+-  width: min(900px, calc(100vw - 24px));
++  width: min(1100px, calc(100vw - 24px));
+   max-height: calc(100dvh - 24px);
+   padding: 16px;
+   overflow-y: auto;
+@@ -365,12 +378,27 @@
+   background: rgb(44 76 133 / 0.5);
+ }
+ 
++.image-dialog__viewport {
++  max-height: calc(100dvh - 180px);
++  overflow: auto;
++  background: var(--bg);
++  border-radius: 6px;
++}
++
+ .image-dialog img {
+   display: block;
+   width: 100%;
+-  max-height: calc(100dvh - 160px);
++  max-height: calc(100dvh - 180px);
+   object-fit: contain;
+-  border-radius: 6px;
++  cursor: zoom-in;
++}
++
++/* 원본 크기(2535px)로 보여주고, 넘치는 부분은 스크롤 */
++.image-dialog__viewport.is-zoomed img {
++  width: auto;
++  max-width: none;
++  max-height: none;
++  cursor: zoom-out;
+ }
+ 
+ .image-dialog__hint {
+@@ -381,6 +409,7 @@
+ 
+ .image-dialog__actions {
+   display: flex;
++  flex-wrap: wrap;
+   justify-content: flex-end;
+   gap: 8px;
+   margin-top: 12px;
+@@ -441,7 +470,7 @@
+   }
+ 
+   .poster {
+-    position: static;
++    position: relative;
+   }
+ 
+   .tabs {
+@@ -450,8 +479,8 @@
+   }
+ 
+   .tabs button {
+-    flex: 1;
+-    padding: 6px 4px;
++    min-width: 96px;
++    padding: 6px 8px;
+   }
+ 
+   .actions {
+@@ -485,8 +514,10 @@
+   .topbar,
+   .editor,
+   .actions,
+-  .poster__hint {
+-    display: none;
++  .poster__hint,
++  .poster__zoom,
++  dialog {
++    display: none !important;
+   }
+ 
+   .layout {
+diff -ruN -x template.js a/docs/changes/v1.3.1_to_v1.4.0.diff board/docs/changes/v1.3.1_to_v1.4.0.diff
+--- a/docs/changes/v1.3.1_to_v1.4.0.diff	1970-01-01 00:00:00.000000000 +0000
++++ b/docs/changes/v1.3.1_to_v1.4.0.diff	2026-09-28 15:32:35.558066558 +0000
+@@ -0,0 +1,312 @@
++diff -ruN -x template.js a/CHANGELOG.md board/CHANGELOG.md
++--- a/CHANGELOG.md	2026-09-28 15:31:23.840101140 +0000
+++++ b/CHANGELOG.md	2026-09-28 15:32:35.053363996 +0000
++@@ -1,5 +1,16 @@
++ # CHANGELOG
++ 
+++## [1.4.0] - 2026-09-28
+++
+++### Added
+++- 지난 주 보기: 탭 범위를 설정(`pastWeeks`, `futureWeeks`)으로 조절. 기본 4週前〜来週
+++- 포스터 「拡大表示」 버튼
+++- 이미지 미리보기 확대·축소 (이미지 탭 또는 「拡大」 버튼, 원본 크기로 보고 스크롤)
+++
+++### Changed
+++- 주 탭이 넘치면 가로 스크롤, 선택한 탭이 보이도록 자동 이동
+++- 이미지 미리보기 창 최대 폭 900px → 1100px
+++
++ ## [1.3.1] - 2026-09-28
++ 
++ ### Added
++diff -ruN -x template.js a/README.md board/README.md
++--- a/README.md	2026-09-28 15:31:23.840086940 +0000
+++++ b/README.md	2026-09-28 15:32:35.053225457 +0000
++@@ -5,7 +5,8 @@
++ ## 사용법
++ 
++ 1. `index.html`을 Chrome, Edge, Safari 중 하나로 엽니다.
++-2. 위쪽 탭에서 「先週」「今週」「来週」 중 하나를 고릅니다. 주는 오늘 날짜를 기준으로 자동 계산됩니다.
+++2. 위쪽 탭에서 주를 고릅니다. 기본으로 「4週前」부터 「来週」까지 나오고, 주는 오늘 날짜를 기준으로 자동 계산됩니다. 탭이 화면보다 넓으면 옆으로 밀어서 봅니다.
+++   - 포스터 오른쪽 위 「拡大表示」를 누르면 포스터를 크게 볼 수 있습니다. 창 안에서 이미지를 누르면 원본 크기로 확대되고, 다시 누르면 전체 보기로 돌아옵니다.
++ 3. 포스터의 칸을 누르면 그날의 편집 창이 뜹니다. 아래(PC에서는 오른쪽) 목록에서 바로 입력해도 됩니다.
++    - 하트 안의 숫자는 날짜가 자동으로 들어갑니다.
++    - 「お休み」: 켜면 근무 입력 대신 「お休みの理由」와 「メッセージ（任意）」가 나옵니다. 이유는 定休日, 臨時休業 등 후보에서 고르거나 직접 입력하고, 비워 두면 「お休み」로 표시됩니다. 메시지는 기본으로 비어 있고, 입력한 날에만 카드 아래쪽에 작게 표시됩니다. 모든 휴무일에 같은 메시지를 쓰려면 설정의 `closedMessage`에 넣습니다.
++@@ -45,6 +46,7 @@
++ | 항목 | 설명 |
++ |---|---|
++ | `weekStartsOn` | 주 시작 요일. 0=일, 1=월 … 6=토 |
+++| `pastWeeks` / `futureWeeks` | 탭에 보여줄 주 범위. 이번 주 기준 몇 주 전부터 몇 주 후까지 (기본 4 / 1) |
++ | `maxRows` | 하루 최대 인원 (기본 6) |
++ | `closedLabel` | 휴무 이유를 비웠을 때의 문구 (기본 「お休み」) |
++ | `closedMessage` | 휴무일 기본 메시지 (기본 공백 = 표시 안 함). 날짜별로 입력한 메시지가 우선 |
++diff -ruN -x template.js a/css/style.css board/css/style.css
++--- a/css/style.css	2026-09-28 15:31:23.840056280 +0000
+++++ b/css/style.css	2026-09-28 15:32:05.976351961 +0000
++@@ -91,12 +91,16 @@
++ 
++ .tabs {
++   display: flex;
++-  flex-wrap: wrap;
++   gap: 6px;
+++  max-width: 100%;
++   margin-left: auto;
+++  padding-bottom: 2px;
+++  overflow-x: auto;
+++  scrollbar-width: thin;
++ }
++ 
++ .tabs button {
+++  flex: 0 0 auto;
++   padding: 6px 16px;
++   font-size: 13px;
++   line-height: 1.35;
++@@ -124,6 +128,15 @@
++   top: 20px;
++ }
++ 
+++.poster__zoom {
+++  position: absolute;
+++  top: 10px;
+++  right: 10px;
+++  padding: 6px 12px;
+++  font-size: 13px;
+++  background: rgb(255 255 255 / 0.92);
+++}
+++
++ .poster canvas {
++   display: block;
++   width: 100%;
++@@ -353,7 +366,7 @@
++ /* ---------- 이미지 미리보기 ---------- */
++ 
++ .image-dialog {
++-  width: min(900px, calc(100vw - 24px));
+++  width: min(1100px, calc(100vw - 24px));
++   max-height: calc(100dvh - 24px);
++   padding: 16px;
++   overflow-y: auto;
++@@ -365,12 +378,27 @@
++   background: rgb(44 76 133 / 0.5);
++ }
++ 
+++.image-dialog__viewport {
+++  max-height: calc(100dvh - 180px);
+++  overflow: auto;
+++  background: var(--bg);
+++  border-radius: 6px;
+++}
+++
++ .image-dialog img {
++   display: block;
++   width: 100%;
++-  max-height: calc(100dvh - 160px);
+++  max-height: calc(100dvh - 180px);
++   object-fit: contain;
++-  border-radius: 6px;
+++  cursor: zoom-in;
+++}
+++
+++/* 원본 크기(2535px)로 보여주고, 넘치는 부분은 스크롤 */
+++.image-dialog__viewport.is-zoomed img {
+++  width: auto;
+++  max-width: none;
+++  max-height: none;
+++  cursor: zoom-out;
++ }
++ 
++ .image-dialog__hint {
++@@ -381,6 +409,7 @@
++ 
++ .image-dialog__actions {
++   display: flex;
+++  flex-wrap: wrap;
++   justify-content: flex-end;
++   gap: 8px;
++   margin-top: 12px;
++@@ -441,7 +470,7 @@
++   }
++ 
++   .poster {
++-    position: static;
+++    position: relative;
++   }
++ 
++   .tabs {
++@@ -450,8 +479,8 @@
++   }
++ 
++   .tabs button {
++-    flex: 1;
++-    padding: 6px 4px;
+++    min-width: 96px;
+++    padding: 6px 8px;
++   }
++ 
++   .actions {
++@@ -485,7 +514,8 @@
++   .topbar,
++   .editor,
++   .actions,
++-  .poster__hint {
+++  .poster__hint,
+++  .poster__zoom {
++     display: none;
++   }
++ 
++diff -ruN -x template.js "a/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md" "board/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md"
++--- "a/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md"	1970-01-01 00:00:00.000000000 +0000
+++++ "board/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md"	2026-09-28 15:32:35.055834434 +0000
++@@ -0,0 +1,17 @@
+++# DEVLOG-20260928-006 지난 주 보기, 포스터 확대
+++
+++## 요청
+++- 몇 주 전까지 볼 수 있게
+++- 포스터 이미지가 작아서 크게 볼 수 있게
+++
+++## 조치
+++- 고정 3개 탭(`WEEK_OFFSETS`) 대신 설정 `pastWeeks`(기본 4), `futureWeeks`(기본 1)로 탭을 만든다. 이름은 先週·今週·来週·再来週, 나머지는 「n週前」「n週後」.
+++- 탭이 넘치면 가로 스크롤. 다시 그릴 때 선택한 탭을 가운데로 스크롤.
+++- 포스터 오른쪽 위에 「拡大表示」 버튼 → 기존 이미지 미리보기 창을 연다.
+++- 미리보기 창: 이미지를 감싸는 스크롤 영역(`#image-viewport`) 추가. 이미지 탭 또는 「拡大」 버튼으로 원본 크기(2535px) ↔ 전체 보기 전환. 확대할 때 누른 지점이 가운데 오도록 스크롤.
+++- 인쇄 시 「拡大表示」 버튼은 숨김.
+++
+++## 검증
+++- 탭 6개(4週前〜来週) 표시, 4週前 선택 시 8/31〜9/6 주 표시.
+++- PC: 확대 버튼 → 미리보기, 이미지 클릭 시 원본 크기·클릭 지점 스크롤, 「全体を表示」로 복귀.
+++- 휴대폰(390px): 탭 가로 스크롤과 今週 자동 위치, 미리보기 확대 확인. 인쇄 PDF에 버튼 미표시.
++diff -ruN -x template.js a/index.html board/index.html
++--- a/index.html	2026-09-28 15:31:23.840073591 +0000
+++++ b/index.html	2026-09-28 15:31:52.409136220 +0000
++@@ -23,6 +23,7 @@
++   <main class="layout">
++     <section class="poster" aria-label="プレビュー">
++       <canvas id="poster"></canvas>
+++      <button type="button" class="poster__zoom">拡大表示</button>
++       <p class="poster__hint">ポスターの枠をタップすると、その日を編集できます。</p>
++     </section>
++ 
++@@ -39,9 +40,12 @@
++   </dialog>
++ 
++   <dialog class="image-dialog" id="image-dialog" aria-label="画像プレビュー">
++-    <img id="image-preview" alt="シフト表の画像プレビュー">
++-    <p class="image-dialog__hint">スマホの場合は、画像を長押しして写真に保存することもできます。</p>
+++    <div class="image-dialog__viewport" id="image-viewport">
+++      <img id="image-preview" alt="シフト表の画像プレビュー">
+++    </div>
+++    <p class="image-dialog__hint">画像をタップすると拡大・縮小します。スマホの場合は、画像を長押しして写真に保存することもできます。</p>
++     <div class="image-dialog__actions">
+++      <button type="button" data-action="toggle-zoom">拡大</button>
++       <button type="button" data-action="close-image">閉じる</button>
++       <a class="button primary" id="image-download">ダウンロード</a>
++     </div>
++diff -ruN -x template.js a/js/app.js board/js/app.js
++--- a/js/app.js	2026-09-28 15:31:23.840010477 +0000
+++++ b/js/app.js	2026-09-28 15:31:52.408912738 +0000
++@@ -1,11 +1,6 @@
++ 'use strict';
++ 
++ const CONFIG = window.BOARD_CONFIG;
++-const WEEK_OFFSETS = [
++-  { offset: -1, label: '先週' },
++-  { offset: 0, label: '今週' },
++-  { offset: 1, label: '来週' },
++-];
++ const ROW_FIELDS = ['name', 'time'];
++ 
++ const state = {
++@@ -137,18 +132,32 @@
++ 
++ // ---------- 주 탭 ----------
++ 
+++function weekTabLabel(offset) {
+++  const names = { '-1': '先週', 0: '今週', 1: '来週', 2: '再来週' };
+++  if (names[offset]) {
+++    return names[offset];
+++  }
+++  return offset < 0 ? `${-offset}週前` : `${offset}週後`;
+++}
+++
++ function renderTabs() {
++   const nav = document.getElementById('week-tabs');
+++  const offsets = [];
+++  for (let offset = -CONFIG.pastWeeks; offset <= CONFIG.futureWeeks; offset += 1) {
+++    offsets.push(offset);
+++  }
++   nav.replaceChildren(
++-    ...WEEK_OFFSETS.map(({ offset, label }) => {
+++    ...offsets.map((offset) => {
++       const button = document.createElement('button');
++       button.type = 'button';
++       button.dataset.offset = String(offset);
++       button.setAttribute('aria-pressed', String(offset === state.weekOffset));
++-      button.textContent = `${label}\n${weekTitle(offset).range}`;
+++      button.textContent = `${weekTabLabel(offset)}\n${weekTitle(offset).range}`;
++       return button;
++     }),
++   );
+++  // 탭이 화면보다 넓으면 가로로 스크롤되므로, 선택한 탭이 보이게 옮긴다.
+++  nav.querySelector('[aria-pressed="true"]').scrollIntoView({ block: 'nearest', inline: 'center' });
++   const { title, range } = weekTitle(state.weekOffset);
++   document.getElementById('week-label').textContent = `${title}  ${range}`;
++ }
++@@ -709,6 +718,7 @@
++     const link = document.getElementById('image-download');
++     link.href = url;
++     link.download = fileName;
+++    setImageZoom(false);
++     dialog.showModal();
++   }, 'image/png');
++ }
++@@ -719,6 +729,25 @@
++   image.removeAttribute('src');
++ }
++ 
+++// 전체 보기 ↔ 원본 크기 보기. 원본 크기에서는 누른 곳이 화면 가운데 오도록 스크롤한다.
+++function setImageZoom(zoomed, clickEvent) {
+++  const viewport = document.getElementById('image-viewport');
+++  const image = document.getElementById('image-preview');
+++  let ratioX = 0.5;
+++  let ratioY = 0.5;
+++  if (clickEvent) {
+++    const rect = image.getBoundingClientRect();
+++    ratioX = (clickEvent.clientX - rect.left) / rect.width;
+++    ratioY = (clickEvent.clientY - rect.top) / rect.height;
+++  }
+++  viewport.classList.toggle('is-zoomed', zoomed);
+++  document.querySelector('[data-action="toggle-zoom"]').textContent = zoomed ? '全体を表示' : '拡大';
+++  if (zoomed) {
+++    viewport.scrollLeft = image.offsetWidth * ratioX - viewport.clientWidth / 2;
+++    viewport.scrollTop = image.offsetHeight * ratioY - viewport.clientHeight / 2;
+++  }
+++}
+++
++ function handleAction(action) {
++   const actions = {
++     save: saveSchedule,
++@@ -782,6 +811,11 @@
++   const imageDialog = document.getElementById('image-dialog');
++   imageDialog.querySelector('[data-action="close-image"]').addEventListener('click', () => imageDialog.close());
++   imageDialog.addEventListener('close', closeImagePreview);
+++  const imageViewport = document.getElementById('image-viewport');
+++  const isZoomed = () => imageViewport.classList.contains('is-zoomed');
+++  document.getElementById('image-preview').addEventListener('click', (event) => setImageZoom(!isZoomed(), event));
+++  imageDialog.querySelector('[data-action="toggle-zoom"]').addEventListener('click', () => setImageZoom(!isZoomed()));
+++  document.querySelector('.poster__zoom').addEventListener('click', openImagePreview);
++   // 모달에서 고친 값을 목록에도 반영한다.
++   dialog.addEventListener('close', renderEditor);
++ 
++diff -ruN -x template.js a/js/config.js board/js/config.js
++--- a/js/config.js	2026-09-28 15:31:23.839996722 +0000
+++++ b/js/config.js	2026-09-28 15:31:52.408362407 +0000
++@@ -6,6 +6,10 @@
++   // 한 주의 시작 요일 (0=일, 1=월, … 6=토). 템플릿 첫 번째 카드가 이 요일이 된다.
++   weekStartsOn: 1,
++ 
+++  // 위쪽 탭에 보여줄 주의 범위: 이번 주 기준 몇 주 전부터 몇 주 후까지
+++  pastWeeks: 4,
+++  futureWeeks: 1,
+++
++   // 하루에 넣을 수 있는 최대 인원
++   maxRows: 6,
++ 
+diff -ruN -x template.js "a/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md" "board/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md"
+--- "a/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md"	1970-01-01 00:00:00.000000000 +0000
++++ "board/docs/devlogs/20260928/DEVLOG-20260928-006_\354\247\200\353\202\234\354\243\274\353\263\264\352\270\260_\355\217\254\354\212\244\355\204\260\355\231\225\353\214\200.md"	2026-09-28 15:32:35.055834434 +0000
+@@ -0,0 +1,17 @@
++# DEVLOG-20260928-006 지난 주 보기, 포스터 확대
++
++## 요청
++- 몇 주 전까지 볼 수 있게
++- 포스터 이미지가 작아서 크게 볼 수 있게
++
++## 조치
++- 고정 3개 탭(`WEEK_OFFSETS`) 대신 설정 `pastWeeks`(기본 4), `futureWeeks`(기본 1)로 탭을 만든다. 이름은 先週·今週·来週·再来週, 나머지는 「n週前」「n週後」.
++- 탭이 넘치면 가로 스크롤. 다시 그릴 때 선택한 탭을 가운데로 스크롤.
++- 포스터 오른쪽 위에 「拡大表示」 버튼 → 기존 이미지 미리보기 창을 연다.
++- 미리보기 창: 이미지를 감싸는 스크롤 영역(`#image-viewport`) 추가. 이미지 탭 또는 「拡大」 버튼으로 원본 크기(2535px) ↔ 전체 보기 전환. 확대할 때 누른 지점이 가운데 오도록 스크롤.
++- 인쇄 시 「拡大表示」 버튼은 숨김.
++
++## 검증
++- 탭 6개(4週前〜来週) 표시, 4週前 선택 시 8/31〜9/6 주 표시.
++- PC: 확대 버튼 → 미리보기, 이미지 클릭 시 원본 크기·클릭 지점 스크롤, 「全体を表示」로 복귀.
++- 휴대폰(390px): 탭 가로 스크롤과 今週 자동 위치, 미리보기 확대 확인. 인쇄 PDF에 버튼 미표시.
+diff -ruN -x template.js a/index.html board/index.html
+--- a/index.html	2026-09-28 15:31:23.840073591 +0000
++++ b/index.html	2026-09-28 15:31:52.409136220 +0000
+@@ -23,6 +23,7 @@
+   <main class="layout">
+     <section class="poster" aria-label="プレビュー">
+       <canvas id="poster"></canvas>
++      <button type="button" class="poster__zoom">拡大表示</button>
+       <p class="poster__hint">ポスターの枠をタップすると、その日を編集できます。</p>
+     </section>
+ 
+@@ -39,9 +40,12 @@
+   </dialog>
+ 
+   <dialog class="image-dialog" id="image-dialog" aria-label="画像プレビュー">
+-    <img id="image-preview" alt="シフト表の画像プレビュー">
+-    <p class="image-dialog__hint">スマホの場合は、画像を長押しして写真に保存することもできます。</p>
++    <div class="image-dialog__viewport" id="image-viewport">
++      <img id="image-preview" alt="シフト表の画像プレビュー">
++    </div>
++    <p class="image-dialog__hint">画像をタップすると拡大・縮小します。スマホの場合は、画像を長押しして写真に保存することもできます。</p>
+     <div class="image-dialog__actions">
++      <button type="button" data-action="toggle-zoom">拡大</button>
+       <button type="button" data-action="close-image">閉じる</button>
+       <a class="button primary" id="image-download">ダウンロード</a>
+     </div>
+diff -ruN -x template.js a/js/app.js board/js/app.js
+--- a/js/app.js	2026-09-28 15:31:23.840010477 +0000
++++ b/js/app.js	2026-09-28 15:31:52.408912738 +0000
+@@ -1,11 +1,6 @@
+ 'use strict';
+ 
+ const CONFIG = window.BOARD_CONFIG;
+-const WEEK_OFFSETS = [
+-  { offset: -1, label: '先週' },
+-  { offset: 0, label: '今週' },
+-  { offset: 1, label: '来週' },
+-];
+ const ROW_FIELDS = ['name', 'time'];
+ 
+ const state = {
+@@ -137,18 +132,32 @@
+ 
+ // ---------- 주 탭 ----------
+ 
++function weekTabLabel(offset) {
++  const names = { '-1': '先週', 0: '今週', 1: '来週', 2: '再来週' };
++  if (names[offset]) {
++    return names[offset];
++  }
++  return offset < 0 ? `${-offset}週前` : `${offset}週後`;
++}
++
+ function renderTabs() {
+   const nav = document.getElementById('week-tabs');
++  const offsets = [];
++  for (let offset = -CONFIG.pastWeeks; offset <= CONFIG.futureWeeks; offset += 1) {
++    offsets.push(offset);
++  }
+   nav.replaceChildren(
+-    ...WEEK_OFFSETS.map(({ offset, label }) => {
++    ...offsets.map((offset) => {
+       const button = document.createElement('button');
+       button.type = 'button';
+       button.dataset.offset = String(offset);
+       button.setAttribute('aria-pressed', String(offset === state.weekOffset));
+-      button.textContent = `${label}\n${weekTitle(offset).range}`;
++      button.textContent = `${weekTabLabel(offset)}\n${weekTitle(offset).range}`;
+       return button;
+     }),
+   );
++  // 탭이 화면보다 넓으면 가로로 스크롤되므로, 선택한 탭이 보이게 옮긴다.
++  nav.querySelector('[aria-pressed="true"]').scrollIntoView({ block: 'nearest', inline: 'center' });
+   const { title, range } = weekTitle(state.weekOffset);
+   document.getElementById('week-label').textContent = `${title}  ${range}`;
+ }
+@@ -709,6 +718,7 @@
+     const link = document.getElementById('image-download');
+     link.href = url;
+     link.download = fileName;
++    setImageZoom(false);
+     dialog.showModal();
+   }, 'image/png');
+ }
+@@ -719,6 +729,25 @@
+   image.removeAttribute('src');
+ }
+ 
++// 전체 보기 ↔ 원본 크기 보기. 원본 크기에서는 누른 곳이 화면 가운데 오도록 스크롤한다.
++function setImageZoom(zoomed, clickEvent) {
++  const viewport = document.getElementById('image-viewport');
++  const image = document.getElementById('image-preview');
++  let ratioX = 0.5;
++  let ratioY = 0.5;
++  if (clickEvent) {
++    const rect = image.getBoundingClientRect();
++    ratioX = (clickEvent.clientX - rect.left) / rect.width;
++    ratioY = (clickEvent.clientY - rect.top) / rect.height;
++  }
++  viewport.classList.toggle('is-zoomed', zoomed);
++  document.querySelector('[data-action="toggle-zoom"]').textContent = zoomed ? '全体を表示' : '拡大';
++  if (zoomed) {
++    viewport.scrollLeft = image.offsetWidth * ratioX - viewport.clientWidth / 2;
++    viewport.scrollTop = image.offsetHeight * ratioY - viewport.clientHeight / 2;
++  }
++}
++
+ function handleAction(action) {
+   const actions = {
+     save: saveSchedule,
+@@ -782,6 +811,11 @@
+   const imageDialog = document.getElementById('image-dialog');
+   imageDialog.querySelector('[data-action="close-image"]').addEventListener('click', () => imageDialog.close());
+   imageDialog.addEventListener('close', closeImagePreview);
++  const imageViewport = document.getElementById('image-viewport');
++  const isZoomed = () => imageViewport.classList.contains('is-zoomed');
++  document.getElementById('image-preview').addEventListener('click', (event) => setImageZoom(!isZoomed(), event));
++  imageDialog.querySelector('[data-action="toggle-zoom"]').addEventListener('click', () => setImageZoom(!isZoomed()));
++  document.querySelector('.poster__zoom').addEventListener('click', openImagePreview);
+   // 모달에서 고친 값을 목록에도 반영한다.
+   dialog.addEventListener('close', renderEditor);
+ 
+diff -ruN -x template.js a/js/config.js board/js/config.js
+--- a/js/config.js	2026-09-28 15:31:23.839996722 +0000
++++ b/js/config.js	2026-09-28 15:31:52.408362407 +0000
+@@ -6,6 +6,10 @@
+   // 한 주의 시작 요일 (0=일, 1=월, … 6=토). 템플릿 첫 번째 카드가 이 요일이 된다.
+   weekStartsOn: 1,
+ 
++  // 위쪽 탭에 보여줄 주의 범위: 이번 주 기준 몇 주 전부터 몇 주 후까지
++  pastWeeks: 4,
++  futureWeeks: 1,
++
+   // 하루에 넣을 수 있는 최대 인원
+   maxRows: 6,
+ 

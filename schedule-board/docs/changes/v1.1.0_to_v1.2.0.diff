@@ -1,0 +1,1298 @@
+diff -ruN -x '*.md' -x template.js a/css/style.css board/css/style.css
+--- a/css/style.css	2026-09-28 15:11:34.621441885 +0000
++++ b/css/style.css	2026-09-28 15:15:44.106529266 +0000
+@@ -16,14 +16,15 @@
+ 
+ body {
+   margin: 0;
+-  font-family: system-ui, "Apple SD Gothic Neo", "Malgun Gothic", "Hiragino Sans", sans-serif;
++  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+   font-size: 15px;
+   color: var(--text);
+   background: var(--bg);
+ }
+ 
+ button,
+-input {
++input,
++select {
+   font: inherit;
+ }
+ 
+@@ -87,6 +88,23 @@
+   margin-left: auto;
+ }
+ 
++.topbar__color {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  font-size: 14px;
++  color: var(--muted);
++}
++
++.topbar__color select {
++  min-height: 36px;
++  padding: 4px 8px;
++  color: var(--ink);
++  background: #fff;
++  border: 1px solid var(--line);
++  border-radius: 8px;
++}
++
+ .tabs button {
+   padding: 6px 16px;
+   font-size: 13px;
+@@ -153,71 +171,108 @@
+ 
+ .day__head {
+   display: flex;
++  flex-wrap: wrap;
+   align-items: center;
+-  justify-content: space-between;
+-  margin-bottom: 8px;
++  gap: 8px 12px;
++  margin-bottom: 10px;
+ }
+ 
+ .day__head h2 {
+-  margin: 0;
+-  font-size: 16px;
++  margin: 0 auto 0 0;
++  font-size: 17px;
+   color: var(--tone-ink);
+ }
+ 
+-.day__heart {
++.field {
++  display: block;
++  margin-bottom: 10px;
++}
++
++.field__label {
++  display: block;
++  margin-bottom: 4px;
++  font-size: 13px;
++  color: var(--muted);
++}
++
++.field--heart {
+   display: flex;
+   align-items: center;
+-  gap: 4px;
+-  margin-left: auto;
+-  margin-right: 12px;
+-  font-size: 14px;
+-  color: var(--muted);
++  gap: 6px;
++  margin: 0;
+ }
+ 
+-.day__heart input {
+-  width: 3.5em;
+-  padding: 4px 6px;
++.field--heart .field__label {
++  margin: 0;
++  white-space: nowrap;
++}
++
++.day .field--heart input {
++  width: 4.2em;
+   text-align: center;
+-  color: var(--tone-ink);
++}
++
++.day input {
++  width: 100%;
++  min-width: 0;
++  min-height: 40px;
++  padding: 7px 10px;
++  color: var(--text);
++  background: #fff;
+   border: 1px solid var(--line);
+-  border-radius: 6px;
++  border-radius: 8px;
++}
++
++.day input:focus {
++  outline: none;
++  border-color: var(--tone-ink);
+ }
+ 
+-.day__closed {
++.switch {
+   display: flex;
+   align-items: center;
+-  gap: 4px;
++  gap: 6px;
++  min-height: 40px;
++  padding: 0 12px;
+   font-size: 14px;
+   color: var(--muted);
++  border: 1px solid var(--line);
++  border-radius: 999px;
++  cursor: pointer;
++}
++
++.switch input {
++  width: 18px;
++  height: 18px;
++  min-height: 0;
++  accent-color: var(--tone-ink);
++}
++
++.day.is-closed .switch {
++  color: #fff;
++  background: var(--tone-ink);
++  border-color: var(--tone-ink);
+ }
+ 
++/* 휴무일에는 근무 입력 대신 휴무 이유를 보여준다. */
++.day__closed-note,
+ .day.is-closed .day__rows,
+ .day.is-closed .day__add {
+   display: none;
+ }
+ 
++.day.is-closed .day__closed-note {
++  display: block;
++}
++
+ .row {
+   display: grid;
+-  grid-template-columns: minmax(0, 1fr) 7.5em 32px;
++  grid-template-columns: minmax(0, 1fr) 7.5em 40px;
+   gap: 6px;
+   margin-bottom: 6px;
+ }
+ 
+-.row input {
+-  width: 100%;
+-  min-width: 0;
+-  padding: 7px 9px;
+-  color: var(--text);
+-  border: 1px solid var(--line);
+-  border-radius: 8px;
+-}
+-
+-.row input:focus {
+-  outline: none;
+-  border-color: var(--tone);
+-}
+-
+-.row button {
++.row__remove {
+   padding: 0;
+   font-size: 18px;
+   line-height: 1;
+@@ -226,6 +281,7 @@
+ 
+ .day__add {
+   width: 100%;
++  min-height: 40px;
+   padding: 6px;
+   font-size: 14px;
+   color: var(--tone-ink);
+@@ -233,11 +289,70 @@
+   border-radius: 8px;
+ }
+ 
++/* ---------- 콤보박스 ---------- */
++
++.combo {
++  position: relative;
++}
++
++.combo input {
++  padding-right: 36px;
++}
++
++.combo__toggle {
++  position: absolute;
++  top: 0;
++  right: 0;
++  width: 36px;
++  height: 100%;
++  padding: 0;
++  font-size: 14px;
++  color: var(--muted);
++  background: none;
++  border: 0;
++  border-radius: 0 8px 8px 0;
++}
++
++.combo__list {
++  position: absolute;
++  z-index: 5;
++  top: calc(100% + 4px);
++  left: 0;
++  right: 0;
++  max-height: 220px;
++  margin: 0;
++  padding: 4px;
++  overflow-y: auto;
++  list-style: none;
++  background: #fff;
++  border: 1px solid var(--line);
++  border-radius: 10px;
++  box-shadow: 0 8px 24px rgb(44 76 133 / 0.14);
++}
++
++.combo__list[hidden] {
++  display: none;
++}
++
++.combo__list li {
++  padding: 10px 12px;
++  border-radius: 6px;
++  cursor: pointer;
++}
++
++.combo__list li:hover,
++.combo__list li.is-active {
++  color: var(--tone-ink);
++  background: var(--bg);
++}
++
+ /* ---------- 수정 모달 ---------- */
+ 
+ .dialog {
+-  width: min(460px, calc(100vw - 24px));
++  width: min(480px, calc(100vw - 24px));
++  max-height: calc(100dvh - 24px);
+   padding: 0;
++  overflow-y: auto;
+   border: 0;
+   border-radius: 12px;
+   background: transparent;
+@@ -295,9 +410,21 @@
+   gap: 8px;
+ }
+ 
+-/* ---------- 휴대폰 ---------- */
++/* ---------- 태블릿 가로 ---------- */
++
++@media (max-width: 1200px) {
++  .days {
++    grid-template-columns: 1fr;
++  }
++}
++
++/* ---------- 휴대폰·태블릿 세로 ---------- */
+ 
+ @media (max-width: 900px) {
++  .days {
++    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
++  }
++
+   .layout {
+     grid-template-columns: 1fr;
+     padding: 12px 12px 150px;
+@@ -327,7 +454,9 @@
+ 
+   .actions__buttons button {
+     flex: 1 1 30%;
+-    padding: 10px 6px;
++    padding: 10px 4px;
++    font-size: 14px;
++    white-space: nowrap;
+   }
+ }
+ 
+diff -ruN -x '*.md' -x template.js a/index.html board/index.html
+--- a/index.html	2026-09-28 15:11:34.621829950 +0000
++++ b/index.html	2026-09-28 15:11:53.412339908 +0000
+@@ -1,13 +1,13 @@
+ <!doctype html>
+-<html lang="ko">
++<html lang="ja">
+ <head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="robots" content="noindex">
+-  <title>스케줄 관리 | Sweet Afternoon</title>
++  <title>シフト管理 | Sweet Afternoon</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@500&display=swap">
++  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap">
+   <link rel="stylesheet" href="css/style.css">
+   <script src="js/config.js" defer></script>
+   <script src="js/template.js" defer></script>
+@@ -15,38 +15,38 @@
+ </head>
+ <body>
+   <header class="topbar">
+-    <h1>스케줄 관리</h1>
++    <h1>シフト管理</h1>
+     <p class="topbar__week" id="week-label"></p>
+-    <nav class="tabs" id="week-tabs" aria-label="주 선택"></nav>
++    <nav class="tabs" id="week-tabs" aria-label="週の選択"></nav>
++    <label class="topbar__color">文字色 <select id="text-color"></select></label>
+   </header>
+ 
+   <main class="layout">
+-    <section class="poster" aria-label="미리보기">
++    <section class="poster" aria-label="プレビュー">
+       <canvas id="poster"></canvas>
+-      <p class="poster__hint">포스터의 칸을 누르면 그날을 수정할 수 있어요.</p>
++      <p class="poster__hint">ポスターの枠をタップすると、その日を編集できます。</p>
+     </section>
+ 
+-    <section class="editor" aria-label="입력">
++    <section class="editor" aria-label="入力">
+       <div class="days" id="days"></div>
+-      <datalist id="cast-names"></datalist>
+     </section>
+   </main>
+ 
+-  <dialog class="dialog" id="day-dialog" aria-label="하루 수정">
++  <dialog class="dialog" id="day-dialog" aria-label="1日の編集">
+     <div id="dialog-body"></div>
+     <div class="dialog__actions">
+-      <button type="button" class="primary" data-action="close-dialog">완료</button>
++      <button type="button" class="primary" data-action="close-dialog">完了</button>
+     </div>
+   </dialog>
+ 
+   <footer class="actions">
+     <p class="actions__status" id="status" role="status" aria-live="polite"></p>
+     <div class="actions__buttons">
+-      <button type="button" data-action="copy-prev">전주 복사</button>
+-      <button type="button" data-action="clear">이 주 비우기</button>
+-      <button type="button" data-action="download">이미지 저장</button>
+-      <button type="button" data-action="print">인쇄</button>
+-      <button type="button" data-action="save" class="primary">저장</button>
++      <button type="button" data-action="copy-prev">前週をコピー</button>
++      <button type="button" data-action="clear">この週をクリア</button>
++      <button type="button" data-action="download">画像を保存</button>
++      <button type="button" data-action="print">印刷</button>
++      <button type="button" data-action="save" class="primary">保存</button>
+     </div>
+   </footer>
+ </body>
+diff -ruN -x '*.md' -x template.js a/js/app.js board/js/app.js
+--- a/js/app.js	2026-09-28 15:11:34.621095467 +0000
++++ b/js/app.js	2026-09-28 15:15:44.106871119 +0000
+@@ -2,14 +2,17 @@
+ 
+ const CONFIG = window.BOARD_CONFIG;
+ const WEEK_OFFSETS = [
+-  { offset: -1, label: '전주' },
+-  { offset: 0, label: '이번 주' },
+-  { offset: 1, label: '다음 주' },
++  { offset: -1, label: '先週' },
++  { offset: 0, label: '今週' },
++  { offset: 1, label: '来週' },
+ ];
++const ROW_FIELDS = ['name', 'time'];
+ 
+ const state = {
+   weekOffset: 0,
+-  schedule: {}, // { 'YYYY-MM-DD': { closed: boolean, heart: string, rows: [{ name, time }] } }
++  // { 'YYYY-MM-DD': { closed, closedNote, event, heart, rows: [{ name, time }] } }
++  schedule: {},
++  settings: { textColor: CONFIG.textColors[0].value },
+   dirty: false,
+   template: null,
+ };
+@@ -49,49 +52,74 @@
+   const dates = weekDates(offset);
+   const anchor = dates[3];
+   const nth = Math.floor((anchor.getDate() - 1) / 7) + 1;
+-  const range = `${shortDate(dates[0])} ~ ${shortDate(dates[6])}`;
+-  return { title: `${anchor.getFullYear()}년 ${anchor.getMonth() + 1}월 ${nth}주차`, range };
++  const range = `${shortDate(dates[0])}〜${shortDate(dates[6])}`;
++  return { title: `${anchor.getFullYear()}年${anchor.getMonth() + 1}月 第${nth}週`, range };
+ }
+ 
+ function shortDate(date) {
+   return `${date.getMonth() + 1}/${date.getDate()}`;
+ }
+ 
++function dateLabel(date) {
++  return `${shortDate(date)}(${CONFIG.weekdayLabels[date.getDay()]})`;
++}
++
+ // ---------- 저장소 ----------
+ 
+-function loadSchedule() {
++function emptyDay() {
++  return { closed: false, closedNote: '', event: '', heart: '', rows: [] };
++}
++
++function loadJson(key, fallback) {
+   try {
+-    return JSON.parse(localStorage.getItem(CONFIG.storageKey)) || {};
++    return JSON.parse(localStorage.getItem(key)) || fallback;
+   } catch (err) {
+-    console.error('저장된 스케줄을 읽지 못했습니다', err);
+-    return {};
++    console.error(`${key} の読み込みに失敗しました`, err);
++    return fallback;
+   }
+ }
+ 
++function loadSchedule() {
++  // 예전 버전 데이터에는 없는 필드가 있으므로 기본값을 채운다.
++  const saved = loadJson(CONFIG.storageKey, {});
++  for (const key of Object.keys(saved)) {
++    saved[key] = { ...emptyDay(), ...saved[key] };
++  }
++  return saved;
++}
++
+ function saveSchedule() {
+   // 빈 날은 저장하지 않아 데이터가 계속 쌓이지 않게 한다.
+   const cleaned = {};
+   for (const [key, day] of Object.entries(state.schedule)) {
+     const rows = day.rows.filter((row) => row.name.trim() || row.time.trim());
+-    const heart = (day.heart || '').trim();
+-    if (day.closed || rows.length > 0 || heart) {
+-      cleaned[key] = { closed: day.closed, heart, rows };
++    const texts = { closedNote: day.closedNote.trim(), event: day.event.trim(), heart: day.heart.trim() };
++    if (day.closed || rows.length > 0 || texts.event || texts.heart) {
++      cleaned[key] = { closed: day.closed, ...texts, rows };
+     }
+   }
+   try {
+     localStorage.setItem(CONFIG.storageKey, JSON.stringify(cleaned));
+   } catch (err) {
+-    console.error('스케줄 저장 실패', err);
+-    setStatus('저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.', true);
++    console.error('シフトの保存に失敗しました', err);
++    setStatus('保存できませんでした。ブラウザの保存容量を確認してください。', true);
+     return;
+   }
+   setDirty(false);
+-  setStatus('저장했습니다.');
++  setStatus('保存しました。');
++}
++
++function saveSettings() {
++  try {
++    localStorage.setItem(CONFIG.settingsKey, JSON.stringify(state.settings));
++  } catch (err) {
++    console.error('設定の保存に失敗しました', err);
++  }
+ }
+ 
+ function getDay(key) {
+   if (!state.schedule[key]) {
+-    state.schedule[key] = { closed: false, heart: '', rows: [] };
++    state.schedule[key] = emptyDay();
+   }
+   return state.schedule[key];
+ }
+@@ -107,7 +135,7 @@
+ function setDirty(dirty) {
+   state.dirty = dirty;
+   if (dirty) {
+-    setStatus('저장하지 않은 변경이 있습니다.');
++    setStatus('保存していない変更があります。');
+   }
+ }
+ 
+@@ -116,7 +144,7 @@
+   drawPoster();
+ }
+ 
+-// ---------- 주 탭 ----------
++// ---------- 주 탭, 글자색 ----------
+ 
+ function renderTabs() {
+   const nav = document.getElementById('week-tabs');
+@@ -134,12 +162,37 @@
+   document.getElementById('week-label').textContent = `${title}  ${range}`;
+ }
+ 
++function renderColorSelect() {
++  const select = document.getElementById('text-color');
++  select.replaceChildren(...CONFIG.textColors.map((color) => new Option(color.name, color.value)));
++  select.value = state.settings.textColor;
++}
++
+ // ---------- 입력 화면 ----------
+ 
+ function renderEditor() {
+   const container = document.getElementById('days');
+   container.replaceChildren(...weekDates(state.weekOffset).map((date, index) => renderDayPanel(date, index)));
+-  renderNameSuggestions();
++}
++
++function field(labelText, control, className) {
++  const label = document.createElement('label');
++  label.className = `field ${className || ''}`;
++  const caption = document.createElement('span');
++  caption.className = 'field__label';
++  caption.textContent = labelText;
++  label.append(caption, control);
++  return label;
++}
++
++function textInput(fieldName, value, placeholder, maxLength) {
++  const input = document.createElement('input');
++  input.dataset.field = fieldName;
++  input.value = value;
++  input.placeholder = placeholder;
++  input.maxLength = maxLength;
++  input.autocomplete = 'off';
++  return input;
+ }
+ 
+ function renderDayPanel(date, index) {
+@@ -147,31 +200,24 @@
+   const day = getDay(key);
+   const panel = document.createElement('article');
+   panel.className = `day day--${CONFIG.cards[index].tone}`;
++  panel.classList.toggle('is-closed', day.closed);
+   panel.dataset.key = key;
+ 
+   const head = document.createElement('header');
+   head.className = 'day__head';
+   const title = document.createElement('h2');
+-  title.textContent = `${shortDate(date)} (${CONFIG.weekdayLabels[date.getDay()]})`;
++  title.textContent = dateLabel(date);
++  // 비워 두면 날짜가 자동으로 들어간다.
++  const heart = field('ハート', textInput('heart', day.heart, String(date.getDate()), 4), 'field--heart');
+   const closed = document.createElement('label');
+-  closed.className = 'day__closed';
+-  closed.innerHTML = '<input type="checkbox" data-field="closed"> 휴무';
++  closed.className = 'switch';
++  closed.innerHTML = '<input type="checkbox" data-field="closed"><span>お休み</span>';
+   closed.querySelector('input').checked = day.closed;
+-
+-  // 비워 두면 날짜가 자동으로 들어간다.
+-  const heart = document.createElement('label');
+-  heart.className = 'day__heart';
+-  heart.textContent = '하트 ';
+-  const heartInput = document.createElement('input');
+-  heartInput.dataset.field = 'heart';
+-  heartInput.value = day.heart || '';
+-  heartInput.placeholder = String(date.getDate());
+-  heartInput.maxLength = 4;
+-  heartInput.setAttribute('aria-label', '하트 숫자 (비우면 날짜 자동)');
+-  heart.append(heartInput);
+-
+   head.append(title, heart, closed);
+ 
++  const closedNote = field('お休みの理由', renderCombo('closedNote', day.closedNote, CONFIG.closedLabel, 20), 'day__closed-note');
++  const event = field('イベント', renderCombo('event', day.event, '例：生誕祭、コラボイベント', 20), 'day__event');
++
+   const rows = document.createElement('div');
+   rows.className = 'day__rows';
+   day.rows.forEach((row, rowIndex) => rows.append(renderRow(row, rowIndex)));
+@@ -180,11 +226,10 @@
+   add.type = 'button';
+   add.className = 'day__add';
+   add.dataset.action = 'add-row';
+-  add.textContent = '+ 인원 추가';
++  add.textContent = '＋ キャストを追加';
+   add.disabled = day.rows.length >= CONFIG.maxRows;
+ 
+-  panel.classList.toggle('is-closed', day.closed);
+-  panel.append(head, rows, add);
++  panel.append(head, closedNote, event, rows, add);
+   return panel;
+ }
+ 
+@@ -193,54 +238,35 @@
+   line.className = 'row';
+   line.dataset.index = String(rowIndex);
+ 
+-  const name = document.createElement('input');
+-  name.dataset.field = 'name';
+-  name.value = row.name;
+-  name.placeholder = '이름';
+-  name.setAttribute('list', 'cast-names');
+-  name.setAttribute('aria-label', '이름');
+-
+-  const time = document.createElement('input');
+-  time.dataset.field = 'time';
+-  time.value = row.time;
+-  time.placeholder = '17:00-L';
+-  time.setAttribute('aria-label', '시간');
++  const time = textInput('time', row.time, '17:00-L', 12);
++  time.setAttribute('aria-label', '時間');
+ 
+   const remove = document.createElement('button');
+   remove.type = 'button';
++  remove.className = 'row__remove';
+   remove.dataset.action = 'remove-row';
+   remove.textContent = '×';
+-  remove.setAttribute('aria-label', '이 줄 삭제');
++  remove.setAttribute('aria-label', 'この行を削除');
+ 
+-  line.append(name, time, remove);
++  line.append(renderCombo('name', row.name, '名前', 12), time, remove);
+   return line;
+ }
+ 
+-// 지금까지 입력한 이름을 자동완성 후보로 쓴다.
+-function renderNameSuggestions() {
+-  const names = new Set();
+-  for (const day of Object.values(state.schedule)) {
+-    day.rows.forEach((row) => row.name.trim() && names.add(row.name.trim()));
+-  }
+-  const list = document.getElementById('cast-names');
+-  list.replaceChildren(...[...names].sort().map((name) => new Option(name)));
+-}
+-
+ function handleEditorInput(event) {
+   const panel = event.target.closest('.day');
+-  const field = event.target.dataset.field;
+-  if (!panel || !field) {
++  const fieldName = event.target.dataset.field;
++  if (!panel || !fieldName) {
+     return;
+   }
+   const day = getDay(panel.dataset.key);
+-  if (field === 'closed') {
++  if (fieldName === 'closed') {
+     day.closed = event.target.checked;
+     panel.classList.toggle('is-closed', day.closed);
+-  } else if (field === 'heart') {
+-    day.heart = event.target.value;
+-  } else {
++  } else if (ROW_FIELDS.includes(fieldName)) {
+     const index = Number(event.target.closest('.row').dataset.index);
+-    day.rows[index][field] = event.target.value;
++    day.rows[index][fieldName] = event.target.value;
++  } else {
++    day[fieldName] = event.target.value;
+   }
+   markChanged();
+ }
+@@ -275,6 +301,154 @@
+   }
+ }
+ 
++// ---------- 콤보박스 (직접 입력 + 후보 목록) ----------
++
++let comboId = 0;
++
++function renderCombo(fieldName, value, placeholder, maxLength) {
++  comboId += 1;
++  const wrap = document.createElement('div');
++  wrap.className = 'combo';
++
++  const input = textInput(fieldName, value, placeholder, maxLength);
++  input.setAttribute('role', 'combobox');
++  input.setAttribute('aria-autocomplete', 'list');
++  input.setAttribute('aria-expanded', 'false');
++  input.setAttribute('aria-controls', `combo-list-${comboId}`);
++  input.setAttribute('aria-label', placeholder);
++
++  const toggle = document.createElement('button');
++  toggle.type = 'button';
++  toggle.className = 'combo__toggle';
++  toggle.tabIndex = -1;
++  toggle.setAttribute('aria-label', '候補を表示');
++  toggle.textContent = '▾';
++
++  const list = document.createElement('ul');
++  list.className = 'combo__list';
++  list.id = `combo-list-${comboId}`;
++  list.setAttribute('role', 'listbox');
++  list.hidden = true;
++
++  wrap.append(input, toggle, list);
++  return wrap;
++}
++
++// 후보는 지금까지 입력한 값에서 만든다. 휴무 이유는 설정의 기본 후보도 포함.
++function comboOptions(fieldName) {
++  const values = new Set(fieldName === 'closedNote' ? CONFIG.closedPresets : []);
++  for (const day of Object.values(state.schedule)) {
++    if (fieldName === 'name') {
++      day.rows.forEach((row) => row.name.trim() && values.add(row.name.trim()));
++    } else if (day[fieldName]?.trim()) {
++      values.add(day[fieldName].trim());
++    }
++  }
++  return [...values].sort((a, b) => a.localeCompare(b, 'ja'));
++}
++
++function openCombo(input, showAll) {
++  const list = input.parentElement.querySelector('.combo__list');
++  const query = showAll ? '' : input.value.trim();
++  const options = comboOptions(input.dataset.field).filter((option) => option !== input.value && option.includes(query));
++  list.replaceChildren(
++    ...options.map((option, i) => {
++      const item = document.createElement('li');
++      item.id = `${list.id}-${i}`;
++      item.setAttribute('role', 'option');
++      item.textContent = option;
++      return item;
++    }),
++  );
++  list.hidden = options.length === 0;
++  input.setAttribute('aria-expanded', String(!list.hidden));
++  input.removeAttribute('aria-activedescendant');
++}
++
++function closeCombo(input) {
++  input.parentElement.querySelector('.combo__list').hidden = true;
++  input.setAttribute('aria-expanded', 'false');
++  input.removeAttribute('aria-activedescendant');
++}
++
++function chooseOption(input, value) {
++  input.value = value;
++  // 직접 입력한 것과 같은 경로로 상태를 바꾼다.
++  input.dispatchEvent(new Event('input', { bubbles: true }));
++  closeCombo(input);
++}
++
++function moveActiveOption(input, step) {
++  const list = input.parentElement.querySelector('.combo__list');
++  const items = [...list.children];
++  if (list.hidden || items.length === 0) {
++    openCombo(input, true);
++    return;
++  }
++  const current = items.findIndex((item) => item.id === input.getAttribute('aria-activedescendant'));
++  const next = items[(current + step + items.length) % items.length];
++  items.forEach((item) => item.classList.toggle('is-active', item === next));
++  input.setAttribute('aria-activedescendant', next.id);
++  next.scrollIntoView({ block: 'nearest' });
++}
++
++function setupCombos() {
++  const isCombo = (node) => node?.getAttribute?.('role') === 'combobox';
++
++  document.addEventListener('focusin', (event) => {
++    if (isCombo(event.target)) {
++      openCombo(event.target, true);
++    }
++  });
++  document.addEventListener('focusout', (event) => {
++    if (isCombo(event.target)) {
++      closeCombo(event.target);
++    }
++  });
++  document.addEventListener('input', (event) => {
++    if (isCombo(event.target) && event.isTrusted) {
++      openCombo(event.target, false);
++    }
++  });
++  // mousedown/touch 에서 기본 동작을 막아야 입력칸 포커스가 유지된 채로 선택된다.
++  document.addEventListener('pointerdown', (event) => {
++    const option = event.target.closest('.combo__list [role="option"]');
++    const toggle = event.target.closest('.combo__toggle');
++    if (!option && !toggle) {
++      return;
++    }
++    event.preventDefault();
++    const input = event.target.closest('.combo').querySelector('input');
++    if (option) {
++      chooseOption(input, option.textContent);
++    } else if (input.parentElement.querySelector('.combo__list').hidden) {
++      input.focus();
++      openCombo(input, true);
++    } else {
++      closeCombo(input);
++    }
++  });
++  document.addEventListener('keydown', (event) => {
++    if (!isCombo(event.target)) {
++      return;
++    }
++    const input = event.target;
++    const list = input.parentElement.querySelector('.combo__list');
++    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
++      event.preventDefault();
++      moveActiveOption(input, event.key === 'ArrowDown' ? 1 : -1);
++    } else if (event.key === 'Enter' && input.hasAttribute('aria-activedescendant')) {
++      event.preventDefault();
++      chooseOption(input, document.getElementById(input.getAttribute('aria-activedescendant')).textContent);
++    } else if (event.key === 'Escape' && !list.hidden) {
++      // 모달이 같이 닫히지 않도록 목록만 닫는다.
++      event.preventDefault();
++      event.stopPropagation();
++      closeCombo(input);
++    }
++  });
++}
++
+ // ---------- 수정 모달 ----------
+ 
+ function renderDialog(index) {
+@@ -287,8 +461,8 @@
+   dialog.dataset.index = String(index);
+   renderDialog(index);
+   dialog.showModal();
+-  // 기본으로는 첫 입력칸(하트)에 포커스가 가서 휴대폰 키보드가 뜬다. 인원 추가 버튼으로 옮긴다.
+-  dialog.querySelector('.day__add').focus();
++  // 기본으로는 첫 입력칸(하트)에 포커스가 가서 휴대폰 키보드가 뜬다. 완료 버튼으로 옮긴다.
++  dialog.querySelector('[data-action="close-dialog"]').focus();
+ }
+ 
+ // 포스터 위 클릭 좌표를 템플릿 좌표로 바꿔 어느 카드인지 찾는다.
+@@ -305,6 +479,21 @@
+ 
+ // ---------- 포스터 ----------
+ 
++function setFont(ctx, weight, size) {
++  ctx.font = `${weight} ${size}px ${CONFIG.font}`;
++}
++
++// 글자가 maxWidth 를 넘으면 크기를 줄여서 반환한다.
++function fitFont(ctx, text, weight, size, maxWidth) {
++  setFont(ctx, weight, size);
++  const width = ctx.measureText(text).width;
++  if (width > maxWidth) {
++    size *= maxWidth / width;
++    setFont(ctx, weight, size);
++  }
++  return size;
++}
++
+ function drawPoster() {
+   const canvas = document.getElementById('poster');
+   const { width, height } = CONFIG.template;
+@@ -312,106 +501,145 @@
+   canvas.height = height;
+   const ctx = canvas.getContext('2d');
+   ctx.drawImage(state.template, 0, 0, width, height);
++  const color = state.settings.textColor;
+ 
+   weekDates(state.weekOffset).forEach((date, index) => {
+     const card = CONFIG.cards[index];
+-    const color = CONFIG.toneColors[card.tone];
+-    const day = state.schedule[toKey(date)] || { closed: false, heart: '', rows: [] };
+-    drawHeartNumber(ctx, card, (day.heart || '').trim() || String(date.getDate()));
++    const day = state.schedule[toKey(date)] || emptyDay();
++    const [x, y, w, h] = card.area;
++    let area = { x, y, w, h };
++
++    drawHeartNumber(ctx, card, day.heart.trim() || String(date.getDate()));
+     drawDateLabel(ctx, card, date, color);
++    if (day.event.trim()) {
++      area = drawEventRibbon(ctx, card, day.event.trim(), color);
++    }
+     if (day.closed) {
+-      drawClosed(ctx, card, color);
++      drawClosed(ctx, card, area, day.closedNote.trim() || CONFIG.closedLabel, color);
+     } else {
+-      drawRows(ctx, card, day.rows.filter((row) => row.name.trim() || row.time.trim()), color);
++      drawRows(ctx, area, day.rows.filter((row) => row.name.trim() || row.time.trim()), color);
+     }
+   });
+ }
+ 
+ function drawHeartNumber(ctx, card, label) {
+   const [x, y] = card.heart;
+-  const maxWidth = 110;
+-  let size = 64;
+-  ctx.font = `500 ${size}px ${CONFIG.font}`;
+-  const width = ctx.measureText(label).width;
+-  if (width > maxWidth) {
+-    size *= maxWidth / width;
+-    ctx.font = `500 ${size}px ${CONFIG.font}`;
+-  }
++  ctx.save();
++  fitFont(ctx, label, 700, 76, 110);
+   ctx.fillStyle = '#ffffff';
++  ctx.shadowColor = 'rgba(120, 60, 90, 0.35)';
++  ctx.shadowBlur = 6;
++  ctx.shadowOffsetY = 2;
+   ctx.textAlign = 'center';
+   ctx.textBaseline = 'middle';
+-  ctx.fillText(label, x, y);
++  ctx.fillText(label, x, y + 4);
++  ctx.restore();
+ }
+ 
+ function drawDateLabel(ctx, card, date, color) {
+   const [x, y, w] = card.area;
+-  ctx.font = `500 34px ${CONFIG.font}`;
++  setFont(ctx, 500, 34);
+   ctx.fillStyle = color;
+   ctx.globalAlpha = 0.75;
+   ctx.textAlign = 'right';
+   ctx.textBaseline = 'alphabetic';
+-  ctx.fillText(`${date.getMonth() + 1}/${date.getDate()}(${CONFIG.weekdayLabels[date.getDay()]})`, x + w, y - 12);
++  ctx.fillText(dateLabel(date), x + w, y - 12);
+   ctx.globalAlpha = 1;
+ }
+ 
+-function drawClosed(ctx, card, color) {
++// 카드 윗부분에 이벤트 띠를 그리고, 남은 글자 영역을 돌려준다.
++function drawEventRibbon(ctx, card, text, color) {
+   const [x, y, w, h] = card.area;
+-  ctx.font = `500 52px ${CONFIG.font}`;
++  const ribbonH = 66;
++  const top = y + 8;
+   ctx.fillStyle = color;
++  ctx.beginPath();
++  ctx.roundRect(x, top, w, ribbonH, ribbonH / 2);
++  ctx.fill();
++
++  fitFont(ctx, `♡ ${text} ♡`, 700, 36, w - 40);
++  ctx.fillStyle = '#ffffff';
+   ctx.textAlign = 'center';
+   ctx.textBaseline = 'middle';
+-  ctx.fillText(CONFIG.closedLabel, x + w / 2, y + h / 2);
++  ctx.fillText(`♡ ${text} ♡`, x + w / 2, top + ribbonH / 2 + 2);
++
++  const used = ribbonH + 24;
++  return { x, y: y + used, w, h: h - used };
+ }
+ 
+-function drawRows(ctx, card, rows, color) {
++function drawClosed(ctx, card, area, reason, color) {
++  const { x, y, w, h } = area;
++  const centerX = x + w / 2;
++  const centerY = y + h / 2;
++
++  // 카드 색으로 옅게 칠하고 점선 테두리를 둘러 근무일과 구분한다.
++  ctx.save();
++  ctx.beginPath();
++  ctx.roundRect(x - 6, y, w + 12, h, 24);
++  ctx.fillStyle = CONFIG.toneColors[card.tone];
++  ctx.globalAlpha = 0.28;
++  ctx.fill();
++  ctx.globalAlpha = 0.55;
++  ctx.strokeStyle = color;
++  ctx.lineWidth = 3;
++  ctx.setLineDash([2, 10]);
++  ctx.lineCap = 'round';
++  ctx.stroke();
++  ctx.restore();
++
++  ctx.fillStyle = color;
++  ctx.textAlign = 'center';
++  ctx.textBaseline = 'middle';
++
++  setFont(ctx, 500, 34);
++  ctx.globalAlpha = 0.7;
++  ctx.fillText('— Holiday —', centerX, centerY - 88);
++  ctx.globalAlpha = 1;
++
++  fitFont(ctx, reason, 700, 66, w - 40);
++  ctx.fillText(reason, centerX, centerY - 10);
++
++  setFont(ctx, 500, 30);
++  ctx.fillText('♡', centerX, centerY + 58);
++
++  fitFont(ctx, CONFIG.closedMessage, 500, 26, w - 30);
++  ctx.globalAlpha = 0.8;
++  ctx.fillText(CONFIG.closedMessage, centerX, centerY + 110);
++  ctx.globalAlpha = 1;
++}
++
++function drawRows(ctx, area, rows, color) {
+   if (rows.length === 0) {
+     return;
+   }
+-  const [x, y, w, h] = card.area;
+-  const baseSize = Math.min(46, h / (rows.length * 1.7));
+-  const lineHeight = baseSize * 1.7;
++  const { x, y, w, h } = area;
++  const baseSize = Math.min(56, h / (rows.length * 1.5));
++  const lineHeight = baseSize * 1.5;
+   const top = y + (h - lineHeight * rows.length) / 2 + lineHeight / 2;
+ 
+   ctx.fillStyle = color;
+-  ctx.strokeStyle = color;
+   ctx.textBaseline = 'middle';
++  ctx.textAlign = 'left';
+ 
+   rows.forEach((row, i) => {
+     const centerY = top + i * lineHeight;
+     const name = row.name.trim();
+     const time = row.time.trim();
+ 
+-    // 이름과 시간이 한 줄에 다 들어가도록 글자 크기를 줄인다.
++    // 이름과 시간을 한 덩어리로 가운데 정렬하고, 넘치면 글자를 줄인다.
+     let size = baseSize;
+-    ctx.font = `500 ${size}px ${CONFIG.font}`;
+-    const needed = ctx.measureText(name).width + ctx.measureText(time).width + size * 1.5;
+-    if (needed > w) {
+-      size *= w / needed;
+-      ctx.font = `500 ${size}px ${CONFIG.font}`;
++    setFont(ctx, 700, size);
++    let gap = size * 0.6;
++    const total = ctx.measureText(name).width + gap + ctx.measureText(time).width;
++    if (total > w) {
++      size *= w / total;
++      setFont(ctx, 700, size);
++      gap = size * 0.6;
+     }
+-
+     const nameWidth = ctx.measureText(name).width;
+-    const timeWidth = ctx.measureText(time).width;
+-    ctx.textAlign = 'left';
+-    ctx.fillText(name, x, centerY);
+-    ctx.textAlign = 'right';
+-    ctx.fillText(time, x + w, centerY);
+-
+-    const gap = size * 0.4;
+-    const leaderStart = x + nameWidth + gap;
+-    const leaderEnd = x + w - timeWidth - gap;
+-    if (leaderEnd - leaderStart > size) {
+-      ctx.save();
+-      ctx.globalAlpha = 0.4;
+-      ctx.lineWidth = size * 0.1;
+-      ctx.lineCap = 'round';
+-      ctx.setLineDash([0.1, size * 0.28]);
+-      ctx.beginPath();
+-      ctx.moveTo(leaderStart, centerY + size * 0.3);
+-      ctx.lineTo(leaderEnd, centerY + size * 0.3);
+-      ctx.stroke();
+-      ctx.restore();
+-    }
++    const start = x + (w - (nameWidth + gap + ctx.measureText(time).width)) / 2;
++    ctx.fillText(name, start, centerY);
++    ctx.fillText(time, start + nameWidth + gap, centerY);
+   });
+ }
+ 
+@@ -421,27 +649,28 @@
+   const current = weekDates(state.weekOffset);
+   const hasData = current.some((date) => {
+     const day = state.schedule[toKey(date)];
+-    return day && (day.closed || day.rows.some((row) => row.name || row.time));
++    return day && (day.closed || day.event || day.rows.some((row) => row.name || row.time));
+   });
+-  if (hasData && !confirm('이 주에 입력된 내용을 전주 내용으로 덮어씁니다. 계속할까요?')) {
++  if (hasData && !confirm('この週の内容を前週の内容で上書きします。よろしいですか？')) {
+     return;
+   }
++  // 요일마다 반복되는 근무와 휴무만 복사하고, 날짜에 딸린 하트·이벤트는 비운다.
+   current.forEach((date) => {
+     const source = state.schedule[toKey(addDays(date, -7))];
+     state.schedule[toKey(date)] = source
+-      ? { closed: source.closed, heart: '', rows: source.rows.map((row) => ({ ...row })) }
+-      : { closed: false, heart: '', rows: [] };
++      ? { ...emptyDay(), closed: source.closed, closedNote: source.closedNote, rows: source.rows.map((row) => ({ ...row })) }
++      : emptyDay();
+   });
+   renderEditor();
+   markChanged();
+ }
+ 
+ function clearWeek() {
+-  if (!confirm('이 주의 입력 내용을 모두 지웁니다. 계속할까요?')) {
++  if (!confirm('この週の入力内容をすべて消します。よろしいですか？')) {
+     return;
+   }
+   weekDates(state.weekOffset).forEach((date) => {
+-    state.schedule[toKey(date)] = { closed: false, heart: '', rows: [] };
++    state.schedule[toKey(date)] = emptyDay();
+   });
+   renderEditor();
+   markChanged();
+@@ -451,7 +680,7 @@
+   const canvas = document.getElementById('poster');
+   canvas.toBlob((blob) => {
+     if (!blob) {
+-      setStatus('이미지를 만들지 못했습니다.', true);
++      setStatus('画像を作成できませんでした。', true);
+       return;
+     }
+     const link = document.createElement('a');
+@@ -486,24 +715,29 @@
+   return new Promise((resolve, reject) => {
+     const image = new Image();
+     image.onload = () => resolve(image);
+-    image.onerror = () => reject(new Error('템플릿 이미지를 불러오지 못했습니다'));
++    image.onerror = () => reject(new Error('テンプレート画像を読み込めませんでした'));
+     image.src = window.TEMPLATE_IMAGE;
+   });
+ }
+ 
+ async function init() {
+   state.schedule = loadSchedule();
++  state.settings = { ...state.settings, ...loadJson(CONFIG.settingsKey, {}) };
+   try {
+     state.template = await loadTemplate();
+   } catch (err) {
+     console.error(err);
+-    setStatus('템플릿 이미지를 불러오지 못했습니다. js/template.js 파일을 확인해 주세요.', true);
++    setStatus('テンプレート画像を読み込めませんでした。js/template.js を確認してください。', true);
+     return;
+   }
+ 
++  renderColorSelect();
+   selectWeek(0);
++  setupCombos();
+   // 웹폰트가 늦게 도착하면 다시 그린다.
+-  document.fonts.load(`500 40px ${CONFIG.font}`).then(drawPoster).catch((err) => console.error('폰트 로드 실패', err));
++  Promise.all([document.fonts.load(`700 40px ${CONFIG.font}`), document.fonts.load(`500 40px ${CONFIG.font}`)])
++    .then(drawPoster)
++    .catch((err) => console.error('フォントの読み込みに失敗しました', err));
+ 
+   document.getElementById('week-tabs').addEventListener('click', (event) => {
+     const button = event.target.closest('button[data-offset]');
+@@ -511,14 +745,19 @@
+       selectWeek(Number(button.dataset.offset));
+     }
+   });
++  document.getElementById('text-color').addEventListener('change', (event) => {
++    state.settings.textColor = event.target.value;
++    saveSettings();
++    drawPoster();
++  });
++
+   const dialog = document.getElementById('day-dialog');
+   for (const container of [document.getElementById('days'), dialog]) {
+     container.addEventListener('input', handleEditorInput);
+-    container.addEventListener('change', (event) => event.target.dataset.field === 'name' && renderNameSuggestions());
+     container.addEventListener('click', handleEditorClick);
+   }
+   dialog.querySelector('[data-action="close-dialog"]').addEventListener('click', () => dialog.close());
+-  // 모달에서 고친 값을 오른쪽 목록에도 반영한다.
++  // 모달에서 고친 값을 목록에도 반영한다.
+   dialog.addEventListener('close', renderEditor);
+ 
+   const poster = document.getElementById('poster');
+diff -ruN -x '*.md' -x template.js a/js/config.js board/js/config.js
+--- a/js/config.js	2026-09-28 15:11:34.620904402 +0000
++++ b/js/config.js	2026-09-28 15:11:45.486085310 +0000
+@@ -2,6 +2,7 @@
+ window.BOARD_CONFIG = {
+   // localStorage 키. 바꾸면 기존에 저장한 스케줄이 보이지 않게 되므로 주의.
+   storageKey: 'sweet-afternoon-schedule:v1',
++  settingsKey: 'sweet-afternoon-schedule:settings',
+ 
+   // 한 주의 시작 요일 (0=일, 1=월, … 6=토). 템플릿 첫 번째 카드가 이 요일이 된다.
+   weekStartsOn: 1,
+@@ -12,11 +13,21 @@
+   // 포스터에 찍히는 요일 표기
+   weekdayLabels: ['日', '月', '火', '水', '木', '金', '土'],
+ 
+-  // 휴무일 카드에 들어갈 문구
++  // 휴무일: 이유를 비워 두면 closedLabel, 아래 작은 글씨는 closedMessage
+   closedLabel: 'お休み',
+-
+-  font: '"Kiwi Maru", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif',
+-  toneColors: { pink: '#a94f71', blue: '#3f64a0' },
++  closedMessage: 'またのお帰りをお待ちしております',
++  // 휴무 이유 입력칸의 기본 후보 (입력했던 이유도 자동으로 후보에 추가됨)
++  closedPresets: ['定休日', '臨時休業', '貸切営業', '店内メンテナンス'],
++
++  // 포스터 글꼴과 글자색 후보 (화면 위쪽 「文字色」에서 선택)
++  font: '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif',
++  textColors: [
++    { name: 'プラム', value: '#8b4766' },
++    { name: 'コーラル', value: '#d9555a' },
++    { name: 'レッド', value: '#b3161c' },
++  ],
++  // 카드 색 (휴무일 바탕, 이벤트 띠에 사용)
++  toneColors: { pink: '#f1b6cb', blue: '#a9cdee' },
+ 
+   // 템플릿 이미지 원본 크기(px)와 카드 위치.
+   // heart: 하트 중심 [x, y] / area: 글자가 들어갈 영역 [x, y, 너비, 높이]
+--- a/README.md	2026-09-28 15:11:34.621899467 +0000
++++ b/README.md	2026-09-28 15:16:30.896443016 +0000
+@@ -1,52 +1,62 @@
+-# Sweet Afternoon 스케줄 관리
++# Sweet Afternoon シフト管理
+ 
+-가게 내부에서 쓰는 주간 스케줄 작성 도구입니다. 서버 없이 `index.html`을 브라우저로 열면 바로 동작합니다.
++가게 내부에서 쓰는 주간 시프트표 작성 도구입니다. 화면은 모두 일본어이고, 서버 없이 `index.html`을 브라우저로 열면 바로 동작합니다. PC, 태블릿, 휴대폰에서 모두 쓸 수 있습니다.
+ 
+ ## 사용법
+ 
+-1. `index.html`을 더블클릭해서 Chrome이나 Edge로 엽니다.
+-2. 위쪽 탭에서 전주, 이번 주, 다음 주 중 하나를 고릅니다. 주는 오늘 날짜를 기준으로 자동 계산됩니다.
+-3. 왼쪽 포스터에서 칸을 누르면 그날의 수정 창이 뜹니다. 오른쪽(휴대폰에서는 아래쪽) 목록에서 바로 입력해도 됩니다. 입력한 내용은 포스터에 바로 반영됩니다.
+-   - 하트 숫자는 날짜가 자동으로 들어갑니다. 다른 글자로 바꾸고 싶을 때만 「하트」 칸에 입력하고, 비우면 다시 날짜로 돌아갑니다.
+-4. 아래 버튼을 사용합니다.
++1. `index.html`을 Chrome, Edge, Safari 중 하나로 엽니다.
++2. 위쪽 탭에서 「先週」「今週」「来週」 중 하나를 고릅니다. 주는 오늘 날짜를 기준으로 자동 계산됩니다.
++3. 포스터의 칸을 누르면 그날의 편집 창이 뜹니다. 아래(PC에서는 오른쪽) 목록에서 바로 입력해도 됩니다.
++   - 「ハート」: 비워 두면 날짜가 자동으로 들어갑니다. 다른 글자를 넣고 싶을 때만 입력합니다.
++   - 「お休み」: 켜면 근무 입력 대신 「お休みの理由」가 나옵니다. 定休日, 臨時休業 등 후보에서 고르거나 직접 입력합니다. 비워 두면 「お休み」로 표시됩니다.
++   - 「イベント」: 입력하면 카드 위쪽에 띠로 표시됩니다.
++   - 이름 칸: 누르면 지금까지 입력한 이름 목록이 나옵니다. 글자를 치면 목록이 좁혀지고, 목록에 없는 이름은 그대로 입력하면 됩니다.
++4. 위쪽 「文字色」에서 포스터 글자색(プラム, コーラル, レッド)을 고릅니다. 이 선택은 바로 저장됩니다.
++5. 아래 버튼을 사용합니다.
+ 
+ | 버튼 | 동작 |
+ |---|---|
+-| 저장 | 브라우저(localStorage)에 저장. `Ctrl+S`로도 저장 |
+-| 인쇄 | 포스터만 A4 한 장으로 인쇄 |
+-| 이미지 저장 | 포스터를 PNG로 내려받기 (SNS 게시용) |
+-| 전주 복사 | 바로 앞 주의 내용을 이 주에 그대로 복사 |
+-| 이 주 비우기 | 이 주의 입력 내용 삭제 |
++| 保存 | 브라우저(localStorage)에 저장. `Ctrl+S`로도 저장 |
++| 印刷 | 포스터만 A4 한 장으로 인쇄 |
++| 画像を保存 | 포스터를 PNG로 내려받기 (SNS 게시용) |
++| 前週をコピー | 바로 앞 주의 근무와 휴무를 이 주에 복사 (하트, 이벤트는 복사하지 않음) |
++| この週をクリア | 이 주의 입력 내용 삭제 |
+ 
+ 저장하지 않고 창을 닫으려 하면 경고가 나옵니다.
+ 
+ ## 주의
+ 
+ - 저장 위치는 **지금 쓰는 브라우저**입니다. 다른 PC나 휴대폰, 다른 브라우저에서는 보이지 않습니다.
+-- 브라우저의 "인터넷 사용 기록 삭제"에서 쿠키·사이트 데이터를 지우면 스케줄도 함께 지워집니다.
+-- 폴더 위치를 옮기면 브라우저가 다른 사이트로 인식해 저장 내용이 보이지 않을 수 있습니다. 한 곳에 두고 사용하세요.
+-- 글꼴(Kiwi Maru)은 인터넷에서 불러옵니다. 오프라인에서는 기본 글꼴로 그려집니다.
++- 브라우저의 사이트 데이터를 지우면 시프트도 함께 지워집니다.
++- 폴더 위치를 옮기면 브라우저가 다른 사이트로 인식해 저장 내용이 보이지 않을 수 있습니다.
++- 글꼴(Shippori Mincho)은 인터넷에서 불러옵니다. 오프라인에서는 기본 명조체로 그려집니다.
+ 
+ ## 파일 구조
+ 
+ ```
+ index.html          화면
+ css/style.css       화면·인쇄 스타일
+-js/config.js        설정 (주 시작 요일, 최대 인원, 카드 위치, 색)
++js/config.js        설정
+ js/app.js           동작 전체
+ js/template.js      템플릿 이미지 (base64)
+ ```
+ 
+ ## 자주 바꾸는 설정 (`js/config.js`)
+ 
+-- `weekStartsOn`: 주 시작 요일. 0=일, 1=월 … 6=토. 첫 번째 카드가 이 요일이 됩니다.
+-- `maxRows`: 하루 최대 인원 (기본 6)
+-- `closedLabel`: 휴무일 문구 (기본 「お休み」)
+-- `cards`: 템플릿에서 하트와 글자 영역의 위치(px). 템플릿 이미지를 바꿀 때만 수정합니다.
++| 항목 | 설명 |
++|---|---|
++| `weekStartsOn` | 주 시작 요일. 0=일, 1=월 … 6=토 |
++| `maxRows` | 하루 최대 인원 (기본 6) |
++| `closedLabel` | 휴무 이유를 비웠을 때의 문구 (기본 「お休み」) |
++| `closedMessage` | 휴무 카드 아래 작은 문구 |
++| `closedPresets` | 휴무 이유 후보 |
++| `textColors` | 글자색 후보 (이름과 색상 코드) |
++| `toneColors` | 카드 색. 휴무 카드 바탕에 사용 |
++| `cards` | 템플릿에서 하트와 글자 영역의 위치(px). 템플릿 이미지를 바꿀 때만 수정 |
+ 
+ ## 템플릿 이미지 교체
+ 
+-템플릿은 `js/template.js` 안에 글자(base64)로 들어 있습니다. 파일을 직접 열어도 "이미지 저장"이 되도록 하기 위해서입니다.
++템플릿은 `js/template.js` 안에 글자(base64)로 들어 있습니다. 파일을 직접 열어도 이미지 저장이 되도록 하기 위해서입니다.
+ 새 이미지로 바꿀 때는 이미지 파일이 있는 폴더에서 아래 명령을 실행하고, 결과를 `js/template.js`로 덮어씁니다.
+ 
+ PowerShell:
+--- a/CHANGELOG.md	2026-09-28 15:11:34.621963761 +0000
++++ b/CHANGELOG.md	2026-09-28 15:16:30.907045211 +0000
+@@ -1,5 +1,22 @@
+ # CHANGELOG
+ 
++## [1.2.0] - 2026-09-28
++
++### Added
++- 휴무 이유 입력 (후보 선택 또는 직접 입력), 휴무 카드 디자인 (Holiday 문구, 바탕색, 점선 테두리, 안내 문구)
++- 이벤트 입력, 카드 위쪽 이벤트 띠 표시
++- 포스터 글자색 선택 (プラム, コーラル, レッド)
++- 이름·휴무 이유·이벤트 입력칸을 콤보박스(직접 입력 + 터치하면 후보 목록)로 변경
++
++### Changed
++- 화면 문구를 모두 일본어로 변경
++- 포스터 글꼴을 명조 굵은체로, 근무 표시를 가운데 정렬로 변경 (점선 리더 제거)
++- 태블릿 가로·세로, 휴대폰 화면 배치와 터치 영역 크기 조정
++- 「前週をコピー」가 휴무 이유도 함께 복사
++
++### Removed
++- 이름 자동완성용 `<datalist>` (콤보박스로 대체)
++
+ ## [1.1.0] - 2026-09-28
+ 
+ ### Added

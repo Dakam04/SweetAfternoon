@@ -1,0 +1,333 @@
+diff -ruN -x template.js -x dist a/CHANGELOG.md b16/CHANGELOG.md
+--- a/CHANGELOG.md	2026-09-28 15:40:48.230900465 +0000
++++ b/CHANGELOG.md	2026-09-28 15:42:05.036290285 +0000
+@@ -1,5 +1,10 @@
+ # CHANGELOG
+ 
++## [1.7.0] - 2026-09-29
++
++### Added
++- 「データ移行」: 데이터 내보내기(JSON 파일, 휴대폰은 공유 창)와 가져오기(같은 날짜만 덮어쓰기)
++
+ ## [1.6.0] - 2026-09-29
+ 
+ ### Added
+diff -ruN -x template.js -x dist a/README.md b16/README.md
+--- a/README.md	2026-09-28 15:40:48.231771497 +0000
++++ b/README.md	2026-09-28 15:42:05.036080262 +0000
+@@ -21,6 +21,7 @@
+ | 画像プレビュー | 저장될 PNG를 미리 보여주고, 「ダウンロード」로 내려받기. 휴대폰에서는 미리보기 이미지를 길게 눌러 사진에 저장 가능 |
+ | 前週をコピー | 바로 앞 주의 근무와 휴무를 이 주에 복사 (이벤트는 복사하지 않음) |
+ | この週をクリア | 이 주의 입력 내용 삭제 |
++| データ移行 | 다른 기기로 데이터 옮기기 (아래 「다른 기기로 옮기기」 참고) |
+ 
+ 저장하지 않고 창을 닫으려 하면 경고가 나옵니다.
+ 
+@@ -38,6 +39,18 @@
+ - 홈 화면에 추가한 앱과 Safari 탭은 저장 공간이 서로 다릅니다. 한쪽만 정해서 쓰세요.
+ - Safari 탭으로만 쓰면, 7일 넘게 그 사이트를 열지 않았을 때 iOS가 저장 내용을 지울 수 있습니다. 홈 화면에 추가해서 쓰는 것을 권장합니다.
+ 
++## 다른 기기로 옮기기
++
++1. 지금 쓰는 기기에서 「データ移行」 → 「データを書き出す」를 누릅니다.
++   - 휴대폰: 공유 창이 뜨면 AirDrop, LINE, メール 등으로 보냅니다.
++   - PC: `shift-data_날짜.json` 파일이 내려받아집니다.
++2. 옮길 기기에서 이 화면을 열고 「データ移行」 → 「データを読み込む」로 받은 파일을 고릅니다.
++3. 같은 날짜는 읽어 온 내용으로 덮어쓰고, 나머지 날짜는 그대로 남습니다. 읽어 오면 바로 저장됩니다.
++
++- 저장하지 않은 변경이 있으면 내보내기 전에 저장할지 묻습니다.
++- 「データを書き出す」로 만든 파일만 읽어 옵니다. 다른 파일을 고르면 오류 메시지가 나옵니다.
++- 백업용으로도 쓸 수 있습니다. 가끔 내보내 두면 휴대폰을 바꾸거나 데이터가 지워졌을 때 되살릴 수 있습니다.
++
+ ### 원파일 다시 만들기
+ 
+ `css`, `js`, `index.html`을 고친 뒤에는 원파일도 다시 만들어야 반영됩니다. Node.js가 설치된 PC에서 프로젝트 폴더에 들어가 아래를 실행합니다.
+diff -ruN -x template.js -x dist a/css/style.css b16/css/style.css
+--- a/css/style.css	2026-09-28 15:40:48.230959109 +0000
++++ b/css/style.css	2026-09-28 15:41:16.059621703 +0000
+@@ -438,6 +438,56 @@
+   margin-top: 12px;
+ }
+ 
++/* ---------- 데이터 이동 ---------- */
++
++.data-dialog {
++  width: min(480px, calc(100vw - 24px));
++  padding: 20px;
++  border: 0;
++  border-radius: 12px;
++}
++
++.data-dialog::backdrop {
++  background: rgb(44 76 133 / 0.5);
++}
++
++.data-dialog h2 {
++  margin: 0 0 8px;
++  font-size: 18px;
++  color: var(--ink);
++}
++
++.data-dialog p,
++.data-dialog__steps {
++  margin: 0 0 10px;
++  font-size: 14px;
++  line-height: 1.6;
++}
++
++.data-dialog__steps {
++  padding-left: 1.4em;
++}
++
++.data-dialog__note {
++  color: var(--muted);
++}
++
++.data-dialog__actions {
++  display: grid;
++  gap: 8px;
++  margin-top: 16px;
++}
++
++.data-dialog__actions button {
++  min-height: 44px;
++}
++
++.data-dialog__footer {
++  display: flex;
++  justify-content: flex-end;
++  margin-top: 16px;
++}
++
+ /* ---------- 하단 버튼 ---------- */
+ 
+ .actions {
+diff -ruN -x template.js -x dist "a/docs/devlogs/20260929/DEVLOG-20260929-002_\353\215\260\354\235\264\355\204\260\353\202\264\353\263\264\353\202\264\352\270\260\352\260\200\354\240\270\354\230\244\352\270\260.md" "b16/docs/devlogs/20260929/DEVLOG-20260929-002_\353\215\260\354\235\264\355\204\260\353\202\264\353\263\264\353\202\264\352\270\260\352\260\200\354\240\270\354\230\244\352\270\260.md"
+--- "a/docs/devlogs/20260929/DEVLOG-20260929-002_\353\215\260\354\235\264\355\204\260\353\202\264\353\263\264\353\202\264\352\270\260\352\260\200\354\240\270\354\230\244\352\270\260.md"	1970-01-01 00:00:00.000000000 +0000
++++ "b16/docs/devlogs/20260929/DEVLOG-20260929-002_\353\215\260\354\235\264\355\204\260\353\202\264\353\263\264\353\202\264\352\270\260\352\260\200\354\240\270\354\230\244\352\270\260.md"	2026-09-28 15:42:05.038484526 +0000
+@@ -0,0 +1,18 @@
++# DEVLOG-20260929-002 데이터 내보내기·가져오기
++
++## 요청
++다른 휴대폰으로 데이터를 넘길 수 있게 내보내기·가져오기 추가
++
++## 조치
++- `cleanSchedule()`: 저장용 정리 로직을 `saveSchedule()`에서 분리해 내보내기와 같이 쓴다. `saveSchedule()`은 성공 여부를 반환.
++- 내보내기 `exportData()`: `{ format: 'sweet-afternoon-shift', version: 1, exportedAt, schedule }` JSON.
++  - 저장 안 한 변경이 있으면 저장할지 확인 후 진행.
++  - 터치 기기이고 파일 공유를 지원하면 공유 창(`navigator.share`), 아니면 파일 다운로드. 공유 취소(AbortError)는 무시, 그 밖의 실패는 다운로드로 대체.
++- 가져오기 `importData()`: 5MB 제한, `format` 확인, 날짜 키 형식 확인, `normalizeDay()`로 필드 타입 정리·인원 수 제한.
++  - 같은 날짜만 덮어쓰고 나머지는 유지(병합). 확인 창에 날짜 수와 규칙 표시. 가져온 뒤 즉시 저장.
++- 하단 「データ移行」 버튼 → 설명과 두 버튼이 있는 창.
++
++## 검증 (원파일, iPhone 13 에뮬레이션)
++- 기기 A: 저장 안 한 변경 확인 창 → 저장 후 3일분 내보내기.
++- 기기 B: 잘못된 JSON은 오류 메시지. 올바른 파일은 확인 창 후 병합(같은 날짜 덮어씀, 다른 날짜 유지), 즉시 저장, 화면 반영.
++- 공유 창(navigator.share)은 에뮬레이션에서 지원되지 않아 다운로드 경로로 확인. 실제 아이폰 공유 창은 미확인.
+diff -ruN -x template.js -x dist a/index.html b16/index.html
+--- a/index.html	2026-09-28 15:40:48.231528093 +0000
++++ b/index.html	2026-09-28 15:41:21.863365742 +0000
+@@ -65,6 +65,24 @@
+     </div>
+   </dialog>
+ 
++  <dialog class="data-dialog" id="data-dialog" aria-labelledby="data-dialog-title">
++    <h2 id="data-dialog-title">データ移行</h2>
++    <p>別のスマホやパソコンにシフトを移すときに使います。</p>
++    <ol class="data-dialog__steps">
++      <li>今の端末で「データを書き出す」を押し、できたファイルを送ります（AirDrop、LINE、メールなど）。</li>
++      <li>移したい端末でこの画面を開き、「データを読み込む」で受け取ったファイルを選びます。</li>
++    </ol>
++    <p class="data-dialog__note">同じ日付のシフトは読み込んだ内容で上書きされます。それ以外の日付はそのまま残ります。</p>
++    <div class="data-dialog__actions">
++      <button type="button" data-action="export" class="primary">データを書き出す</button>
++      <button type="button" data-action="import">データを読み込む</button>
++      <input type="file" id="import-file" accept=".json,application/json" hidden>
++    </div>
++    <div class="data-dialog__footer">
++      <button type="button" data-action="close-data">閉じる</button>
++    </div>
++  </dialog>
++
+   <footer class="actions">
+     <p class="actions__status" id="status" role="status" aria-live="polite"></p>
+     <div class="actions__buttons">
+@@ -72,6 +90,7 @@
+       <button type="button" data-action="clear">この週をクリア</button>
+       <button type="button" data-action="download">画像プレビュー</button>
+       <button type="button" data-action="print">印刷</button>
++      <button type="button" data-action="data">データ移行</button>
+       <button type="button" data-action="save" class="primary">保存</button>
+     </div>
+   </footer>
+diff -ruN -x template.js -x dist a/js/app.js b16/js/app.js
+--- a/js/app.js	2026-09-28 15:40:48.231568353 +0000
++++ b/js/app.js	2026-09-28 15:41:16.059223431 +0000
+@@ -91,8 +91,8 @@
+   return saved;
+ }
+ 
+-function saveSchedule() {
+-  // 빈 날은 저장하지 않아 데이터가 계속 쌓이지 않게 한다.
++// 빈 날은 빼고, 저장·내보내기에 쓸 형태로 정리한다.
++function cleanSchedule() {
+   const cleaned = {};
+   for (const [key, day] of Object.entries(state.schedule)) {
+     const rows = day.rows.filter((row) => row.name.trim() || row.time.trim());
+@@ -105,15 +105,20 @@
+       cleaned[key] = { closed: day.closed, ...texts, rows };
+     }
+   }
++  return cleaned;
++}
++
++function saveSchedule() {
+   try {
+-    localStorage.setItem(CONFIG.storageKey, JSON.stringify(cleaned));
++    localStorage.setItem(CONFIG.storageKey, JSON.stringify(cleanSchedule()));
+   } catch (err) {
+     console.error('シフトの保存に失敗しました', err);
+     setStatus('保存できませんでした。ブラウザの保存容量を確認してください。', true);
+-    return;
++    return false;
+   }
+   setDirty(false);
+   setStatus('保存しました。');
++  return true;
+ }
+ 
+ function getDay(key) {
+@@ -755,6 +760,105 @@
+   }
+ }
+ 
++// ---------- 데이터 내보내기·가져오기 (다른 기기로 옮기기) ----------
++
++const EXPORT_FORMAT = 'sweet-afternoon-shift';
++
++function exportData() {
++  if (state.dirty) {
++    if (!confirm('保存していない変更があります。保存してから書き出しますか？')) {
++      return;
++    }
++    if (!saveSchedule()) {
++      return;
++    }
++  }
++  const data = { format: EXPORT_FORMAT, version: 1, exportedAt: new Date().toISOString(), schedule: cleanSchedule() };
++  const fileName = `shift-data_${toKey(new Date()).replaceAll('-', '')}.json`;
++  const file = new File([JSON.stringify(data, null, 2)], fileName, { type: 'application/json' });
++
++  // 휴대폰에서는 공유 창(AirDrop, LINE, メール 등)으로 바로 보낸다. 안 되면 파일로 내려받는다.
++  const isTouch = window.matchMedia('(pointer: coarse)').matches;
++  if (isTouch && navigator.canShare?.({ files: [file] })) {
++    navigator.share({ files: [file], title: fileName }).catch((err) => {
++      if (err.name !== 'AbortError') {
++        console.error('共有に失敗しました', err);
++        downloadFile(file);
++      }
++    });
++  } else {
++    downloadFile(file);
++  }
++  setStatus(`${Object.keys(data.schedule).length}日分のデータを書き出しました。`);
++}
++
++function downloadFile(file) {
++  const link = document.createElement('a');
++  link.href = URL.createObjectURL(file);
++  link.download = file.name;
++  link.click();
++  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
++}
++
++// 가져온 파일의 하루 데이터를 앱 형식으로 맞춘다. 형식이 틀리면 null.
++function normalizeDay(value) {
++  if (!value || typeof value !== 'object' || !Array.isArray(value.rows)) {
++    return null;
++  }
++  const text = (v) => (typeof v === 'string' ? v : '');
++  return {
++    closed: value.closed === true,
++    closedNote: text(value.closedNote),
++    closedMessage: text(value.closedMessage),
++    event: text(value.event),
++    rows: value.rows
++      .filter((row) => row && typeof row === 'object')
++      .slice(0, CONFIG.maxRows)
++      .map((row) => ({ name: text(row.name), time: text(row.time) })),
++  };
++}
++
++async function importData(file) {
++  let data;
++  try {
++    if (file.size > 5 * 1024 * 1024) {
++      throw new Error('file too large');
++    }
++    data = JSON.parse(await file.text());
++    if (data?.format !== EXPORT_FORMAT || typeof data.schedule !== 'object') {
++      throw new Error('unknown format');
++    }
++  } catch (err) {
++    console.error('読み込みに失敗しました', err);
++    setStatus('このファイルは読み込めません。「データを書き出す」で作ったファイルを選んでください。', true);
++    return;
++  }
++
++  const imported = {};
++  for (const [key, value] of Object.entries(data.schedule)) {
++    const day = normalizeDay(value);
++    if (/^\d{4}-\d{2}-\d{2}$/.test(key) && day) {
++      imported[key] = day;
++    }
++  }
++  const count = Object.keys(imported).length;
++  const message =
++    `${count}日分のデータを読み込みます。\n` +
++    '同じ日付の内容は読み込んだデータで上書きされ、それ以外の日付はそのまま残ります。よろしいですか？';
++  if (count === 0 || !confirm(message)) {
++    if (count === 0) {
++      setStatus('読み込めるデータがありませんでした。', true);
++    }
++    return;
++  }
++  Object.assign(state.schedule, imported);
++  if (saveSchedule()) {
++    setStatus(`${count}日分のデータを読み込みました。`);
++  }
++  document.getElementById('data-dialog').close();
++  selectWeek(state.weekOffset);
++}
++
+ function handleAction(action) {
+   const actions = {
+     save: saveSchedule,
+@@ -762,6 +866,7 @@
+     download: openImagePreview,
+     'copy-prev': copyPreviousWeek,
+     clear: clearWeek,
++    data: () => document.getElementById('data-dialog').showModal(),
+   };
+   actions[action]?.();
+ }
+@@ -825,6 +930,19 @@
+   const imageDialog = document.getElementById('image-dialog');
+   imageDialog.querySelector('[data-action="close-image"]').addEventListener('click', () => imageDialog.close());
+   imageDialog.addEventListener('close', closeImagePreview);
++
++  const dataDialog = document.getElementById('data-dialog');
++  const importInput = document.getElementById('import-file');
++  dataDialog.querySelector('[data-action="export"]').addEventListener('click', exportData);
++  dataDialog.querySelector('[data-action="import"]').addEventListener('click', () => importInput.click());
++  dataDialog.querySelector('[data-action="close-data"]').addEventListener('click', () => dataDialog.close());
++  importInput.addEventListener('change', () => {
++    if (importInput.files[0]) {
++      importData(importInput.files[0]);
++    }
++    // 같은 파일을 다시 골라도 change 가 일어나도록 비운다.
++    importInput.value = '';
++  });
+   const imageViewport = document.getElementById('image-viewport');
+   const isZoomed = () => imageViewport.classList.contains('is-zoomed');
+   document.getElementById('image-preview').addEventListener('click', (event) => setImageZoom(!isZoomed(), event));

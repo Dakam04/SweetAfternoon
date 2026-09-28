@@ -1,0 +1,362 @@
+diff -ruN -x template.js a/CHANGELOG.md board/CHANGELOG.md
+--- a/CHANGELOG.md	2026-09-28 15:26:06.090773973 +0000
++++ b/CHANGELOG.md	2026-09-28 15:27:32.017291017 +0000
+@@ -1,5 +1,18 @@
+ # CHANGELOG
+ 
++## [1.3.0] - 2026-09-28
++
++### Added
++- 이미지 미리보기 창 (「画像プレビュー」): 저장될 PNG 확인 후 다운로드, 휴대폰은 길게 눌러 사진 저장
++- 휴무 메시지를 날짜별로 입력 (「メッセージ（任意）」, 후보 선택 가능)
++
++### Changed
++- 휴무 메시지 기본값을 공백으로 변경. 메시지가 없으면 휴무 카드 글자를 가운데로 재배치
++- 「前週をコピー」가 휴무 메시지도 함께 복사
++
++### Removed
++- 설정 `closedMessage` (날짜별 입력으로 대체, 후보는 `closedMessagePresets`)
++
+ ## [1.2.1] - 2026-09-28
+ 
+ ### Changed
+diff -ruN -x template.js a/README.md board/README.md
+--- a/README.md	2026-09-28 15:26:06.090698651 +0000
++++ b/README.md	2026-09-28 15:27:32.017166199 +0000
+@@ -8,7 +8,7 @@
+ 2. 위쪽 탭에서 「先週」「今週」「来週」 중 하나를 고릅니다. 주는 오늘 날짜를 기준으로 자동 계산됩니다.
+ 3. 포스터의 칸을 누르면 그날의 편집 창이 뜹니다. 아래(PC에서는 오른쪽) 목록에서 바로 입력해도 됩니다.
+    - 「ハート」: 비워 두면 날짜가 자동으로 들어갑니다. 다른 글자를 넣고 싶을 때만 입력합니다.
+-   - 「お休み」: 켜면 근무 입력 대신 「お休みの理由」가 나옵니다. 定休日, 臨時休業 등 후보에서 고르거나 직접 입력합니다. 비워 두면 「お休み」로 표시됩니다.
++   - 「お休み」: 켜면 근무 입력 대신 「お休みの理由」와 「メッセージ（任意）」가 나옵니다. 이유는 定休日, 臨時休業 등 후보에서 고르거나 직접 입력하고, 비워 두면 「お休み」로 표시됩니다. 메시지는 기본으로 비어 있고, 입력한 날에만 카드 아래쪽에 작게 표시됩니다.
+    - 「イベント」: 입력하면 카드 위쪽에 띠로 표시됩니다.
+    - 이름 칸: 누르면 지금까지 입력한 이름 목록이 나옵니다. 글자를 치면 목록이 좁혀지고, 목록에 없는 이름은 그대로 입력하면 됩니다.
+ 4. 아래 버튼을 사용합니다.
+@@ -17,7 +17,7 @@
+ |---|---|
+ | 保存 | 브라우저(localStorage)에 저장. `Ctrl+S`로도 저장 |
+ | 印刷 | 포스터만 A4 한 장으로 인쇄 |
+-| 画像を保存 | 포스터를 PNG로 내려받기 (SNS 게시용) |
++| 画像プレビュー | 저장될 PNG를 미리 보여주고, 「ダウンロード」로 내려받기. 휴대폰에서는 미리보기 이미지를 길게 눌러 사진에 저장 가능 |
+ | 前週をコピー | 바로 앞 주의 근무와 휴무를 이 주에 복사 (하트, 이벤트는 복사하지 않음) |
+ | この週をクリア | 이 주의 입력 내용 삭제 |
+ 
+@@ -47,8 +47,8 @@
+ | `weekStartsOn` | 주 시작 요일. 0=일, 1=월 … 6=토 |
+ | `maxRows` | 하루 최대 인원 (기본 6) |
+ | `closedLabel` | 휴무 이유를 비웠을 때의 문구 (기본 「お休み」) |
+-| `closedMessage` | 휴무 카드 아래 작은 문구 |
+ | `closedPresets` | 휴무 이유 후보 |
++| `closedMessagePresets` | 휴무 메시지 후보 |
+ | `inkColors` | 카드 색(핑크/하늘색)별 글자색 |
+ | `toneColors` | 카드 색. 휴무 카드 바탕에 사용 |
+ | `cards` | 템플릿에서 하트와 글자 영역의 위치(px). 템플릿 이미지를 바꿀 때만 수정 |
+diff -ruN -x template.js a/css/style.css board/css/style.css
+--- a/css/style.css	2026-09-28 15:26:06.090539572 +0000
++++ b/css/style.css	2026-09-28 15:26:33.709481862 +0000
+@@ -45,12 +45,21 @@
+   cursor: default;
+ }
+ 
+-button.primary {
++button.primary,
++.button.primary {
+   color: #fff;
+   background: var(--ink);
+   border-color: var(--ink);
+ }
+ 
++.button {
++  display: inline-block;
++  padding: 8px 14px;
++  text-decoration: none;
++  border: 1px solid var(--line);
++  border-radius: 999px;
++}
++
+ :focus-visible {
+   outline: 2px solid var(--pink-ink);
+   outline-offset: 2px;
+@@ -358,6 +367,42 @@
+   border-radius: 0 0 12px 12px;
+ }
+ 
++/* ---------- 이미지 미리보기 ---------- */
++
++.image-dialog {
++  width: min(900px, calc(100vw - 24px));
++  max-height: calc(100dvh - 24px);
++  padding: 16px;
++  overflow-y: auto;
++  border: 0;
++  border-radius: 12px;
++}
++
++.image-dialog::backdrop {
++  background: rgb(44 76 133 / 0.5);
++}
++
++.image-dialog img {
++  display: block;
++  width: 100%;
++  max-height: calc(100dvh - 160px);
++  object-fit: contain;
++  border-radius: 6px;
++}
++
++.image-dialog__hint {
++  margin: 10px 0 0;
++  font-size: 13px;
++  color: var(--muted);
++}
++
++.image-dialog__actions {
++  display: flex;
++  justify-content: flex-end;
++  gap: 8px;
++  margin-top: 12px;
++}
++
+ /* ---------- 하단 버튼 ---------- */
+ 
+ .actions {
+diff -ruN -x template.js "a/docs/devlogs/20260928/DEVLOG-20260928-004_\354\235\264\353\257\270\354\247\200\353\257\270\353\246\254\353\263\264\352\270\260_\355\234\264\353\254\264\353\251\224\354\213\234\354\247\200.md" "board/docs/devlogs/20260928/DEVLOG-20260928-004_\354\235\264\353\257\270\354\247\200\353\257\270\353\246\254\353\263\264\352\270\260_\355\234\264\353\254\264\353\251\224\354\213\234\354\247\200.md"
+--- "a/docs/devlogs/20260928/DEVLOG-20260928-004_\354\235\264\353\257\270\354\247\200\353\257\270\353\246\254\353\263\264\352\270\260_\355\234\264\353\254\264\353\251\224\354\213\234\354\247\200.md"	1970-01-01 00:00:00.000000000 +0000
++++ "board/docs/devlogs/20260928/DEVLOG-20260928-004_\354\235\264\353\257\270\354\247\200\353\257\270\353\246\254\353\263\264\352\270\260_\355\234\264\353\254\264\353\251\224\354\213\234\354\247\200.md"	2026-09-28 15:27:32.020376750 +0000
+@@ -0,0 +1,15 @@
++# DEVLOG-20260928-004 이미지 미리보기, 휴무 메시지
++
++## 요청
++- 사진 미리보기 추가
++- 휴무 카드의 「またのお帰りをお待ちしております」를 기본 공백으로, 수정 가능하게
++
++## 조치
++- 「画像を保存」을 「画像プレビュー」로 바꾸고, 누르면 저장될 PNG를 `<dialog>`에 보여준다. 창 안의 「ダウンロード」 링크가 같은 PNG를 내려받는다. 창을 닫으면 임시 URL(`URL.createObjectURL`)을 해제한다.
++  - 휴대폰(특히 iOS)은 파일 다운로드보다 이미지 길게 누르기 → 사진 저장이 편해서 안내 문구를 넣었다.
++- 하루 데이터에 `closedMessage` 추가 (기본 ''). 입력칸은 휴무일에만 보이며 콤보박스(후보 `closedMessagePresets` + 입력 이력).
++- 메시지가 없으면 휴무 카드 글자 묶음을 24px 내려 가운데를 맞춘다.
++- 이전 데이터는 `emptyDay()` 기본값과 합쳐지므로 기존 휴무일은 메시지 없이 표시된다.
++
++## 검증
++- 이전 형식 데이터(closedMessage 없음) 로드, 메시지 후보 선택·직접 입력·저장, 미리보기 표시(원본 2535px), 다운로드, 닫을 때 임시 URL 해제, 휴대폰 폭(390px) 표시 확인.
+diff -ruN -x template.js a/index.html board/index.html
+--- a/index.html	2026-09-28 15:26:06.090643302 +0000
++++ b/index.html	2026-09-28 15:26:33.709394006 +0000
+@@ -38,12 +38,21 @@
+     </div>
+   </dialog>
+ 
++  <dialog class="image-dialog" id="image-dialog" aria-label="画像プレビュー">
++    <img id="image-preview" alt="シフト表の画像プレビュー">
++    <p class="image-dialog__hint">スマホの場合は、画像を長押しして写真に保存することもできます。</p>
++    <div class="image-dialog__actions">
++      <button type="button" data-action="close-image">閉じる</button>
++      <a class="button primary" id="image-download">ダウンロード</a>
++    </div>
++  </dialog>
++
+   <footer class="actions">
+     <p class="actions__status" id="status" role="status" aria-live="polite"></p>
+     <div class="actions__buttons">
+       <button type="button" data-action="copy-prev">前週をコピー</button>
+       <button type="button" data-action="clear">この週をクリア</button>
+-      <button type="button" data-action="download">画像を保存</button>
++      <button type="button" data-action="download">画像プレビュー</button>
+       <button type="button" data-action="print">印刷</button>
+       <button type="button" data-action="save" class="primary">保存</button>
+     </div>
+diff -ruN -x template.js a/js/app.js board/js/app.js
+--- a/js/app.js	2026-09-28 15:26:06.090409953 +0000
++++ b/js/app.js	2026-09-28 15:26:33.709265110 +0000
+@@ -10,7 +10,7 @@
+ 
+ const state = {
+   weekOffset: 0,
+-  // { 'YYYY-MM-DD': { closed, closedNote, event, heart, rows: [{ name, time }] } }
++  // { 'YYYY-MM-DD': { closed, closedNote, closedMessage, event, heart, rows: [{ name, time }] } }
+   schedule: {},
+   dirty: false,
+   template: null,
+@@ -66,7 +66,7 @@
+ // ---------- 저장소 ----------
+ 
+ function emptyDay() {
+-  return { closed: false, closedNote: '', event: '', heart: '', rows: [] };
++  return { closed: false, closedNote: '', closedMessage: '', event: '', heart: '', rows: [] };
+ }
+ 
+ function loadSchedule() {
+@@ -88,7 +88,12 @@
+   const cleaned = {};
+   for (const [key, day] of Object.entries(state.schedule)) {
+     const rows = day.rows.filter((row) => row.name.trim() || row.time.trim());
+-    const texts = { closedNote: day.closedNote.trim(), event: day.event.trim(), heart: day.heart.trim() };
++    const texts = {
++      closedNote: day.closedNote.trim(),
++      closedMessage: day.closedMessage.trim(),
++      event: day.event.trim(),
++      heart: day.heart.trim(),
++    };
+     if (day.closed || rows.length > 0 || texts.event || texts.heart) {
+       cleaned[key] = { closed: day.closed, ...texts, rows };
+     }
+@@ -197,6 +202,11 @@
+   head.append(title, heart, closed);
+ 
+   const closedNote = field('お休みの理由', renderCombo('closedNote', day.closedNote, CONFIG.closedLabel, 20), 'day__closed-note');
++  const closedMessage = field(
++    'メッセージ（任意）',
++    renderCombo('closedMessage', day.closedMessage, '例：またのお帰りをお待ちしております', 30),
++    'day__closed-note',
++  );
+   const event = field('イベント', renderCombo('event', day.event, '例：生誕祭、コラボイベント', 20), 'day__event');
+ 
+   const rows = document.createElement('div');
+@@ -210,7 +220,7 @@
+   add.textContent = '＋ キャストを追加';
+   add.disabled = day.rows.length >= CONFIG.maxRows;
+ 
+-  panel.append(head, closedNote, event, rows, add);
++  panel.append(head, closedNote, closedMessage, event, rows, add);
+   return panel;
+ }
+ 
+@@ -317,7 +327,8 @@
+ 
+ // 후보는 지금까지 입력한 값에서 만든다. 휴무 이유는 설정의 기본 후보도 포함.
+ function comboOptions(fieldName) {
+-  const values = new Set(fieldName === 'closedNote' ? CONFIG.closedPresets : []);
++  const presets = { closedNote: CONFIG.closedPresets, closedMessage: CONFIG.closedMessagePresets };
++  const values = new Set(presets[fieldName] || []);
+   for (const day of Object.values(state.schedule)) {
+     if (fieldName === 'name') {
+       day.rows.forEach((row) => row.name.trim() && values.add(row.name.trim()));
+@@ -496,7 +507,7 @@
+       area = drawEventRibbon(ctx, card, day.event.trim(), color);
+     }
+     if (day.closed) {
+-      drawClosed(ctx, card, area, day.closedNote.trim() || CONFIG.closedLabel, color);
++      drawClosed(ctx, card, area, day.closedNote.trim() || CONFIG.closedLabel, day.closedMessage.trim(), color);
+     } else {
+       drawRows(ctx, area, day.rows.filter((row) => row.name.trim() || row.time.trim()), color);
+     }
+@@ -548,10 +559,11 @@
+   return { x, y: y + used, w, h: h - used };
+ }
+ 
+-function drawClosed(ctx, card, area, reason, color) {
++function drawClosed(ctx, card, area, reason, message, color) {
+   const { x, y, w, h } = area;
+   const centerX = x + w / 2;
+-  const centerY = y + h / 2;
++  // 메시지가 없으면 나머지 글자를 조금 내려 가운데를 맞춘다.
++  const centerY = y + h / 2 + (message ? 0 : 24);
+ 
+   // 카드 색으로 옅게 칠하고 점선 테두리를 둘러 근무일과 구분한다.
+   ctx.save();
+@@ -583,10 +595,12 @@
+   setFont(ctx, 500, 30);
+   ctx.fillText('♡', centerX, centerY + 58);
+ 
+-  fitFont(ctx, CONFIG.closedMessage, 500, 26, w - 30);
+-  ctx.globalAlpha = 0.8;
+-  ctx.fillText(CONFIG.closedMessage, centerX, centerY + 110);
+-  ctx.globalAlpha = 1;
++  if (message) {
++    fitFont(ctx, message, 500, 26, w - 30);
++    ctx.globalAlpha = 0.8;
++    ctx.fillText(message, centerX, centerY + 110);
++    ctx.globalAlpha = 1;
++  }
+ }
+ 
+ function drawRows(ctx, area, rows, color) {
+@@ -657,7 +671,13 @@
+   current.forEach((date) => {
+     const source = state.schedule[toKey(addDays(date, -7))];
+     state.schedule[toKey(date)] = source
+-      ? { ...emptyDay(), closed: source.closed, closedNote: source.closedNote, rows: source.rows.map((row) => ({ ...row })) }
++      ? {
++          ...emptyDay(),
++          closed: source.closed,
++          closedNote: source.closedNote,
++          closedMessage: source.closedMessage,
++          rows: source.rows.map((row) => ({ ...row })),
++        }
+       : emptyDay();
+   });
+   renderEditor();
+@@ -675,26 +695,37 @@
+   markChanged();
+ }
+ 
+-function downloadImage() {
++// 저장될 PNG 를 그대로 보여주고, 그 자리에서 내려받는다.
++// 휴대폰에서는 미리보기 이미지를 길게 눌러 사진 앱에 저장할 수도 있다.
++function openImagePreview() {
+   const canvas = document.getElementById('poster');
+   canvas.toBlob((blob) => {
+     if (!blob) {
+       setStatus('画像を作成できませんでした。', true);
+       return;
+     }
+-    const link = document.createElement('a');
+-    link.href = URL.createObjectURL(blob);
+-    link.download = `shift_${toKey(weekStart(state.weekOffset))}.png`;
+-    link.click();
+-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
++    const dialog = document.getElementById('image-dialog');
++    const url = URL.createObjectURL(blob);
++    const fileName = `shift_${toKey(weekStart(state.weekOffset))}.png`;
++    document.getElementById('image-preview').src = url;
++    const link = document.getElementById('image-download');
++    link.href = url;
++    link.download = fileName;
++    dialog.showModal();
+   }, 'image/png');
+ }
+ 
++function closeImagePreview() {
++  const image = document.getElementById('image-preview');
++  URL.revokeObjectURL(image.src);
++  image.removeAttribute('src');
++}
++
+ function handleAction(action) {
+   const actions = {
+     save: saveSchedule,
+     print: () => window.print(),
+-    download: downloadImage,
++    download: openImagePreview,
+     'copy-prev': copyPreviousWeek,
+     clear: clearWeek,
+   };
+@@ -749,6 +780,10 @@
+     container.addEventListener('click', handleEditorClick);
+   }
+   dialog.querySelector('[data-action="close-dialog"]').addEventListener('click', () => dialog.close());
++
++  const imageDialog = document.getElementById('image-dialog');
++  imageDialog.querySelector('[data-action="close-image"]').addEventListener('click', () => imageDialog.close());
++  imageDialog.addEventListener('close', closeImagePreview);
+   // 모달에서 고친 값을 목록에도 반영한다.
+   dialog.addEventListener('close', renderEditor);
+ 
+diff -ruN -x template.js a/js/config.js board/js/config.js
+--- a/js/config.js	2026-09-28 15:26:06.090331887 +0000
++++ b/js/config.js	2026-09-28 15:26:33.708776658 +0000
+@@ -12,11 +12,11 @@
+   // 포스터에 찍히는 요일 표기
+   weekdayLabels: ['日', '月', '火', '水', '木', '金', '土'],
+ 
+-  // 휴무일: 이유를 비워 두면 closedLabel, 아래 작은 글씨는 closedMessage
++  // 휴무일: 이유를 비워 두면 closedLabel 로 표시
+   closedLabel: 'お休み',
+-  closedMessage: 'またのお帰りをお待ちしております',
+-  // 휴무 이유 입력칸의 기본 후보 (입력했던 이유도 자동으로 후보에 추가됨)
++  // 휴무 이유·메시지 입력칸의 기본 후보 (입력했던 값도 자동으로 후보에 추가됨)
+   closedPresets: ['定休日', '臨時休業', '貸切営業', '店内メンテナンス'],
++  closedMessagePresets: ['またのお帰りをお待ちしております'],
+ 
+   font: '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif',
+   // 카드 색에 맞춘 글자색 (근무, 날짜, 이벤트 띠, 휴무 문구)
