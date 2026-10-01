@@ -194,6 +194,7 @@ window.MENU_CONFIG = {
           title: {
             text: 'Karaoke',
             areas: [[430, 1130, 190, 60]],
+            erase: [[402, 1126, 250, 66]],
             inpaint: true,
             fontFamily: 'title',
             fontSize: 42,
@@ -219,6 +220,7 @@ window.MENU_CONFIG = {
           label: '下の一文',
           type: 'text',
           areas: [[395, 1399, 265, 24]],
+          erase: [[378, 1396, 300, 30]],
           fontSize: 13,
           letterSpacing: 1.5,
           text: 'お会計の際に tax10%頂戴致します',
@@ -279,7 +281,7 @@ window.MENU_CONFIG = {
           title: {
             text: 'ウィスキー',
             areas: [[183, 580, 135, 32]],
-            erase: [[178, 580, 124, 32]],
+            erase: [[178, 580, 140, 32]],
             align: 'left',
             inpaint: true,
             fontSize: 22,
@@ -321,7 +323,7 @@ window.MENU_CONFIG = {
           title: {
             text: 'リキュール系',
             areas: [[470, 436, 150, 34]],
-            erase: [[466, 436, 145, 34]],
+            erase: [[466, 436, 170, 34]],
             align: 'left',
             inpaint: true,
             fontSize: 22,
@@ -405,6 +407,7 @@ window.MENU_CONFIG = {
           label: 'Non-alcohol',
           type: 'text',
           areas: [[388, 978, 300, 74]],
+          erase: [[345, 976, 348, 78]],
           inpaint: true,
           fontFamily: 'title',
           fontSize: 50,
@@ -428,7 +431,7 @@ window.MENU_CONFIG = {
           title: {
             text: 'ソフトドリンク',
             areas: [[270, 1120, 170, 32]],
-            erase: [[266, 1120, 168, 32]],
+            erase: [[266, 1120, 178, 32]],
             align: 'left',
             inpaint: true,
             fontSize: 22,
