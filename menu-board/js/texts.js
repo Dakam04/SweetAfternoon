@@ -9,7 +9,7 @@ window.MENU_TEXTS = {
   // ---------- 탭 ----------
   pageTabsLabel: 'メニューのページ',
   // config.js 의 pages[].id 별 탭 이름
-  pageTabs: { front: '表（キャスト・フード）', back: '裏（ドリンク）', remote: 'リモート' },
+  pageTabs: { front: '表（キャスト・フード）', back: '裏（ドリンク）', remote: 'リモート', set: 'セット' },
 
   // ---------- 시프트표로 이동 ----------
   toOtherApp: 'シフト管理へ',

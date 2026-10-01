@@ -30,15 +30,26 @@ function findSection(page, sectionId) {
   return page.sections.find((section) => section.id === sectionId);
 }
 
+// 칸 안의 이름 붙은 한 줄들 (fields) 의 처음 내용 / 저장된 내용
+function fieldValues(section, saved) {
+  return Object.fromEntries(
+    (section.fields || []).map((field) => [field.key, typeof saved?.[field.key] === 'string' ? saved[field.key] : field.text || '']),
+  );
+}
+
 function defaultSection(section) {
   if (section.type === 'text') {
     return { text: section.text || '', sub: section.sub?.text || '' };
+  }
+  if (section.type === 'fields') {
+    return { fields: fieldValues(section) };
   }
   // list 의 처음 항목은 글자만 적어 두었으므로 price 형식으로 맞춘다.
   const items = (section.items || []).map((item) => (typeof item === 'string' ? { name: item } : item));
   return {
     title: section.title?.text || '',
     note: section.note?.text ?? null,
+    fields: fieldValues(section),
     items: items.map((item) => ({ name: item.name || '', price: item.price || '' })),
   };
 }
@@ -59,6 +70,9 @@ function normalizeSection(section, value) {
     }
     return { text: value.text, sub: typeof value.sub === 'string' ? value.sub : section.sub?.text || '' };
   }
+  if (section.type === 'fields') {
+    return { fields: fieldValues(section, value.fields) };
+  }
   if (!Array.isArray(value.items)) {
     return null;
   }
@@ -67,6 +81,7 @@ function normalizeSection(section, value) {
     title: typeof value.title === 'string' ? value.title : section.title?.text || '',
     // 메모는 지운 상태(null)도 그대로 살린다.
     note: typeof value.note === 'string' || value.note === null ? value.note : section.note?.text ?? null,
+    fields: fieldValues(section, value.fields),
     items: value.items
       .filter((item) => item && typeof item === 'object')
       .slice(0, section.maxItems)
@@ -214,6 +229,11 @@ function renderSectionPanel(page, section) {
   title.textContent = section.label;
   head.append(title);
 
+  if (section.type === 'fields') {
+    panel.append(head, ...fieldInputs(section, data, false));
+    return panel;
+  }
+
   if (section.type === 'text') {
     const fields = [field(section.sub ? TEXTS.titleLabel : TEXTS.textLabel, textInput('text', data.text, TEXTS.textPlaceholder, 40))];
     if (section.sub) {
@@ -247,8 +267,27 @@ function renderSectionPanel(page, section) {
     buttons.append(addButton('add-note', TEXTS.addNote, false));
   }
 
-  panel.append(head, ...(titleInput ? [field(TEXTS.titleLabel, titleInput)] : []), ...noteField(data), items, buttons);
+  panel.append(
+    head,
+    ...(titleInput ? [field(TEXTS.titleLabel, titleInput)] : []),
+    ...fieldInputs(section, data, false),
+    ...noteField(data),
+    items,
+    buttons,
+    ...fieldInputs(section, data, true),
+  );
   return panel;
+}
+
+// 칸 안의 이름 붙은 한 줄들. after: true 인 줄은 품목 목록 아래에 둔다.
+function fieldInputs(section, data, after) {
+  return (section.fields || [])
+    .filter((spec) => Boolean(spec.after) === after)
+    .map((spec) => {
+      const input = textInput('fields', data.fields[spec.key], spec.label, 40);
+      input.dataset.key = spec.key;
+      return field(spec.label, input);
+    });
 }
 
 // 메모 입력칸 (메모가 있을 때만). 오른쪽 ×로 메모를 없앤다.
@@ -309,6 +348,8 @@ function handleEditorInput(event) {
   const data = sectionData(currentPage().id, panel.dataset.section);
   if (ITEM_FIELDS.includes(fieldName)) {
     data.items[Number(event.target.closest('.item').dataset.index)][fieldName] = event.target.value;
+  } else if (fieldName === 'fields') {
+    data.fields[event.target.dataset.key] = event.target.value;
   } else {
     data[fieldName] = event.target.value;
   }
@@ -392,7 +433,7 @@ function sectionAt(canvas, clientX, clientY) {
   const y = (clientY - rect.top) * scale;
   const margin = 8;
   return page.sections.find((section) =>
-    [...section.areas, ...[section.title, section.sub, section.note].flatMap((spec) => spec?.areas || [])].some(
+    [...section.areas, ...[section.title, section.sub, section.note, ...(section.fields || [])].flatMap((spec) => spec?.areas || [])].some(
       ([ax, ay, w, h]) => x >= ax - margin && x <= ax + w + margin && y >= ay - margin && y <= ay + h + margin,
     ),
   );
@@ -490,7 +531,9 @@ function cropCanvas(source, [x, y, w, h]) {
 
 // 지워야 할 곳: 각 칸과 그 칸의 제목
 function eraseSpecs(page) {
-  return page.sections.flatMap((section) => [section, section.title, section.sub, section.note?.areas && section.note].filter(Boolean));
+  return page.sections.flatMap((section) =>
+    [section.type !== 'fields' && section, section.title, section.sub, section.note?.areas && section.note, ...(section.fields || [])].filter(Boolean),
+  );
 }
 
 // 영역 테두리의 밝은 점들의 평균색
@@ -611,6 +654,17 @@ function drawPage(pageIndex) {
     if (section.title) {
       drawTextLine(ctx, section.title, data.title.trim());
     }
+    for (const spec of section.fields || []) {
+      const value = data.fields[spec.key].trim();
+      if (spec.kind === 'price') {
+        drawBigPrice(ctx, spec, value);
+      } else {
+        drawTextLine(ctx, spec, value);
+      }
+    }
+    if (section.type === 'fields') {
+      continue;
+    }
     const layout = drawNote(ctx, section, data.note?.trim());
     ctx.fillStyle = CONFIG.inkColor;
     const items = data.items.filter((item) => item.name.trim() || item.price.trim());
@@ -627,21 +681,128 @@ function drawTextLine(ctx, spec, text) {
   if (!text) {
     return;
   }
+  if (spec.latin) {
+    drawMixedLine(ctx, spec, text);
+    return;
+  }
   const [x, y, w, h] = spec.areas[0];
   const family = spec.fontFamily || 'mincho';
+  const condense = spec.condense || 1;
   // 원래 제목 자리보다 조금 넘치는 것까지 허용하고, 그보다 길면 줄인다.
-  const [, spacing] = fitText(ctx, text, spec.fontWeight || 500, spec.fontSize, spec.letterSpacing || 0, w * 1.05, family);
-  ctx.fillStyle = spec.color || CONFIG.inkColor;
+  const [, spacing] = fitText(ctx, text, spec.fontWeight || 500, spec.fontSize, spec.letterSpacing || 0, (w * 1.05) / condense, family);
   // 글꼴마다 글자 높이 기준이 달라서, 실제 글자 모양의 위아래를 재서 영역 가운데에 맞춘다.
   ctx.textBaseline = 'alphabetic';
   const ink = ctx.measureText(text);
   const baseline = y + h / 2 + (ink.actualBoundingBoxAscent - ink.actualBoundingBoxDescent) / 2;
-  if (spec.align === 'left') {
-    drawSpaced(ctx, text, x, baseline, spacing, 'left');
+  if (spec.gradient || spec.arc || condense !== 1) {
+    drawStyledText(ctx, spec, text, baseline, spacing);
   } else {
-    drawSpaced(ctx, text, x + w / 2, baseline, spacing, 'center');
+    ctx.fillStyle = spec.color || CONFIG.inkColor;
+    drawSpaced(ctx, text, spec.align === 'left' ? x : x + w / 2, baseline, spacing, spec.align === 'left' ? 'left' : 'center');
   }
   ctx.textBaseline = 'middle';
+}
+
+// 일본어는 명조, 숫자·영문(800yen 등)은 latin 에 정한 글꼴(이탤릭 세리프 등)로 섞어 쓴다.
+function drawMixedLine(ctx, spec, text) {
+  const [x, y, w, h] = spec.areas[0];
+  const latin = spec.latin;
+  const weight = spec.fontWeight || 500;
+  const parts = text.split(/([A-Za-z0-9][A-Za-z0-9,.%]*)/).filter(Boolean);
+  const isLatin = (part) => /^[A-Za-z0-9]/.test(part);
+  const setPartFont = (part, size) => {
+    if (isLatin(part)) {
+      setFont(ctx, latin.weight || weight, size * (latin.scale || 1), latin.family, latin.style || 'normal');
+    } else {
+      setFont(ctx, weight, size, spec.fontFamily || 'mincho');
+    }
+  };
+  const measure = (size, spacing) =>
+    parts.reduce((sum, part) => {
+      setPartFont(part, size);
+      return sum + (isLatin(part) ? ctx.measureText(part).width : spacedWidth(ctx, part, spacing)) + spacing;
+    }, -spacing);
+
+  let size = spec.fontSize;
+  let spacing = spec.letterSpacing || 0;
+  const natural = measure(size, spacing);
+  if (natural > w * 1.05) {
+    size *= (w * 1.05) / natural;
+    spacing *= (w * 1.05) / natural;
+  }
+  const total = measure(size, spacing);
+  let cursor = spec.align === 'left' ? x : x + w / 2 - total / 2;
+  const baseline = y + h / 2 + size * 0.35;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = spec.color || CONFIG.inkColor;
+  for (const part of parts) {
+    setPartFont(part, size);
+    if (isLatin(part)) {
+      ctx.textAlign = 'left';
+      ctx.fillText(part, cursor, baseline);
+      cursor += ctx.measureText(part).width + spacing;
+    } else {
+      cursor += drawSpaced(ctx, part, cursor, baseline, spacing) + spacing;
+    }
+  }
+  ctx.textBaseline = 'middle';
+}
+
+// 제목용: 리본 곡선을 따라 글자를 휘게(arc) 쓰고, 글자 폭을 좁히고(condense), 그라데이션으로 칠한다.
+// 글자를 따로 그린 판에 모양만 찍고 그 위에 그라데이션을 덮은 뒤 포스터에 옮긴다.
+function drawStyledText(ctx, spec, text, baseline, spacing) {
+  const [x, y, w, h] = spec.areas[0];
+  const scale = ctx.getTransform().a;
+  const margin = h;
+  const layer = document.createElement('canvas');
+  layer.width = Math.ceil((w + margin * 2) * scale);
+  layer.height = Math.ceil((h + margin * 2) * scale);
+  const lc = layer.getContext('2d');
+  lc.setTransform(scale, 0, 0, scale, -(x - margin) * scale, -(y - margin) * scale);
+  lc.font = ctx.font;
+  lc.textBaseline = 'alphabetic';
+  lc.textAlign = 'center';
+  lc.fillStyle = spec.color || CONFIG.inkColor;
+
+  const condense = spec.condense || 1;
+  const chars = [...text];
+  const widths = chars.map((char) => lc.measureText(char).width * condense);
+  const total = widths.reduce((sum, v) => sum + v, 0) + spacing * (chars.length - 1);
+  const centerX = spec.align === 'left' ? x + total / 2 : x + w / 2;
+  // arc: 가운데가 양끝보다 얼마나 올라가는지(px). 원의 반지름으로 바꿔 글자를 원을 따라 놓는다.
+  const rise = spec.arc || 0;
+  const radius = rise > 0 ? (total / 2) ** 2 / (2 * rise) + rise / 2 : 0;
+  const top = baseline - rise / 2;
+
+  let cursor = 0;
+  chars.forEach((char, i) => {
+    const offset = cursor + widths[i] / 2 - total / 2;
+    const angle = radius ? offset / radius : 0;
+    const px = radius ? centerX + radius * Math.sin(angle) : centerX + offset;
+    const py = radius ? top + radius * (1 - Math.cos(angle)) : baseline;
+    lc.save();
+    lc.translate(px, py);
+    lc.rotate(angle);
+    lc.scale(condense, 1);
+    lc.fillText(char, 0, 0);
+    lc.restore();
+    cursor += widths[i] + spacing;
+  });
+
+  if (spec.gradient) {
+    // 글자 왼쪽 끝부터 오른쪽 끝까지 색을 차례로 칠한다.
+    const left = centerX - total / 2;
+    const fill = lc.createLinearGradient(left, 0, left + total, 0);
+    spec.gradient.forEach((color, i) => fill.addColorStop(i / (spec.gradient.length - 1), color));
+    lc.globalCompositeOperation = 'source-in';
+    lc.fillStyle = fill;
+    lc.fillRect(x - margin, y - margin, w + margin * 2, h + margin * 2);
+  }
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(layer, Math.floor((x - margin) * scale), Math.floor((y - margin) * scale));
+  ctx.restore();
 }
 
 // 메모를 쓰고, 품목을 그릴 칸 정보를 돌려준다.
@@ -739,10 +900,8 @@ function drawCapsuleRow(ctx, section, x, w, centerY, item, fontRatio) {
 }
 
 // 가격을 오른쪽 끝에 맞춰 쓰고 폭을 돌려준다. 끝의 글자 단위(yen 등)는 작게 쓴다.
-function drawPrice(ctx, section, price, right, centerY, size) {
-  if (!price) {
-    return 0;
-  }
+// 가격을 숫자와 끝의 글자 단위(yen 등)로 나누고 각각의 폭을 잰다.
+function measurePrice(ctx, section, price, size) {
   const family = section.priceFont || 'mincho';
   const style = section.priceStyle || 'normal';
   const weight = section.priceWeight || 500;
@@ -752,6 +911,30 @@ function drawPrice(ctx, section, price, right, centerY, size) {
   const unitWidth = unit ? ctx.measureText(unit).width : 0;
   setFont(ctx, weight, size, family, style);
   const numberWidth = ctx.measureText(number).width;
+  return { family, style, weight, number, unit, numberWidth, unitWidth };
+}
+
+// 큰 가격 한 줄 (セット 메뉴). 영역 가운데(align: 'left' 면 왼쪽)에 맞추고, 넘치면 줄인다.
+function drawBigPrice(ctx, spec, price) {
+  if (!price) {
+    return;
+  }
+  const [x, y, w, h] = spec.areas[0];
+  let size = spec.fontSize;
+  const { numberWidth, unitWidth } = measurePrice(ctx, spec, price, size);
+  if (numberWidth + unitWidth > w) {
+    size *= w / (numberWidth + unitWidth);
+  }
+  const width = (numberWidth + unitWidth) * (size / spec.fontSize);
+  const right = spec.align === 'left' ? x + width : x + w / 2 + width / 2;
+  drawPrice(ctx, spec, price, right, y + h / 2, size);
+}
+
+function drawPrice(ctx, section, price, right, centerY, size) {
+  if (!price) {
+    return 0;
+  }
+  const { family, style, weight, number, unit, numberWidth, unitWidth } = measurePrice(ctx, section, price, size);
 
   ctx.save();
   ctx.fillStyle = section.priceColor || CONFIG.inkColor;
@@ -836,8 +1019,12 @@ function drawListRow(ctx, section, [x, , w], centerY, item, fontRatio) {
   const price = item.price.trim();
   const right = x + w;
   const bulletX = x + 8;
-  drawSparkle(ctx, bulletX, centerY, size * 0.36);
-  const textX = bulletX + size * 1.1;
+  if (section.bullet === 'heart') {
+    drawHeart(ctx, bulletX, centerY, size * 0.42);
+  } else {
+    drawSparkle(ctx, bulletX, centerY, size * 0.36);
+  }
+  const textX = bulletX + size * (section.bullet === 'heart' ? 1.25 : 1.1);
 
   // 이름과 가격이 한 줄에 다 안 들어가면 둘을 같이 줄인다.
   if (price) {
@@ -865,6 +1052,23 @@ function drawListRow(ctx, section, [x, , w], centerY, item, fontRatio) {
   }
 }
 
+
+// 목록 앞의 하트(♡ 테두리)
+function drawHeart(ctx, cx, cy, r) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.85);
+  ctx.bezierCurveTo(cx - r * 1.3, cy - r * 0.05, cx - r * 0.75, cy - r * 1.05, cx, cy - r * 0.45);
+  ctx.bezierCurveTo(cx + r * 0.75, cy - r * 1.05, cx + r * 1.3, cy - r * 0.05, cx, cy + r * 0.85);
+  ctx.closePath();
+  ctx.fillStyle = 'rgb(255 255 255 / 0.7)';
+  ctx.fill();
+  ctx.strokeStyle = CONFIG.inkColor;
+  ctx.lineWidth = r * 0.16;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.restore();
+}
 
 // 목록 앞의 반짝이(✦ 모양 테두리)
 function drawSparkle(ctx, cx, cy, r) {
@@ -1203,8 +1407,10 @@ async function init() {
   Promise.all([
     document.fonts.load(`700 40px ${CONFIG.fonts.mincho}`),
     document.fonts.load(`500 40px ${CONFIG.fonts.mincho}`),
-    document.fonts.load(`400 40px ${CONFIG.fonts.script}`),
+    document.fonts.load(`600 40px ${CONFIG.fonts.title}`),
     document.fonts.load(`italic 500 40px ${CONFIG.fonts.serif}`),
+    document.fonts.load(`italic 500 40px ${CONFIG.fonts.bodoni}`),
+    document.fonts.load(`500 40px ${CONFIG.fonts.bodoni}`),
     document.fonts.load(`500 40px ${CONFIG.fonts.serif}`),
   ])
     .then(drawAllPages)

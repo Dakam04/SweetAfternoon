@@ -1,13 +1,20 @@
 // 운영 중 바꿀 수 있는 값은 모두 여기에 모은다.
+// セット 메뉴에서 같이 쓰는 모양
+const SET_TITLE = '#2f5596';
+const SET_PRICE = { fontSize: 96, priceFont: 'bodoni', priceStyle: 'italic', priceWeight: 500, unitScale: 0.72, priceColor: '#3d63a3' };
+// 설명 줄의 숫자·영문(800yen 등)은 가격처럼 이탤릭으로
+const SET_LATIN = { family: 'bodoni', style: 'italic', weight: 500, scale: 1.1 };
+
 window.MENU_CONFIG = {
   // localStorage 키. 바꾸면 기존에 저장한 메뉴가 보이지 않게 되므로 주의.
   storageKey: 'sweet-afternoon-menu:v1',
 
-  // 글꼴. 각 칸의 fontFamily 에 'mincho' / 'script' 로 고른다.
+  // 글꼴. 각 칸의 fontFamily 에 'mincho' / 'title' / 'serif' / 'bodoni' 로 고른다.
   fonts: {
     mincho: '"Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif',
-    script: '"Great Vibes", "Snell Roundhand", cursive',
+    title: '"Playfair Display", "Times New Roman", serif',
     serif: '"Playfair Display", "Times New Roman", serif',
+    bodoni: '"Bodoni Moda", "Times New Roman", serif',
   },
   // 메뉴 글자색, 이름과 가격 사이 점선 색, 목록 앞 별 모양 색
   inkColor: '#3d5786',
@@ -40,10 +47,75 @@ window.MENU_CONFIG = {
   //   note: 메모 (「メモを追加」로 넣는 한 줄). areas 를 주면 그 자리에, 없으면 칸 맨 위에 쓴다.
   //         text 는 처음 메모, noteSize 는 메모 글자 크기
   //   inpaint: true 면 바탕색으로 덮지 않고 글자 부분만 주변 색으로 메운다 (리본 위 글자용)
-  //   fontFamily: 'mincho' / 'script' / 'serif', fontWeight, fontStyle('italic'), color: 칸마다 글꼴·굵기·색을 바꿀 때
+  //   fontFamily: 'mincho' / 'title' / 'serif', fontWeight, fontStyle('italic'), color: 칸마다 글꼴·굵기·색을 바꿀 때
+  //   gradient: [색, 색, …] 을 주면 글자 왼쪽 끝부터 오른쪽 끝까지 차례로 그라데이션으로 칠한다 (color 대신)
+  //   arc: 리본 곡선을 따라 가운데가 양끝보다 올라가는 높이(px), condense: 글자 폭 비율 (1 = 그대로)
   //   align: 'left' 면 영역 왼쪽부터 쓴다 (기본은 가운데)
+  //   type: 'fields' 는 품목 목록 없이 이름 붙은 한 줄들(fields)만 있는 칸 (セット 메뉴)
+  //   fields: 칸 안의 한 줄들 [{ key, label, text, areas, … }]. kind: 'price' 면 큰 가격으로, after: true 면 편집 화면에서 품목 아래에 둔다.
+  //   bullet: 'heart' 면 목록 앞 표시를 ♡ 로
   //   type: 'capsule' 은 리모트 메뉴처럼 품목마다 둥근 칸을 그리고, 품목 이름을 「---」로 두면 구분 장식이 들어간다.
   pages: [
+    {
+      id: 'set',
+      image: 'assets/menu-set.png',
+      template: { width: 1055, height: 1491 },
+      sections: [
+        {
+          id: 'oneSet',
+          label: '1セット',
+          type: 'fields',
+          areas: [],
+          fields: [
+            { key: 'title', label: '見出し', text: '1セット', areas: [[150, 425, 280, 62]], erase: [[200, 425, 180, 62]], inpaint: true, fontSize: 52, fontWeight: 700, letterSpacing: 1, latin: { family: 'bodoni', weight: 500, scale: 1.25 }, color: SET_TITLE },
+            { key: 'price', label: '価格', kind: 'price', text: '1,600yen', areas: [[130, 565, 340, 100]], ...SET_PRICE },
+            { key: 'detail', label: '内訳', text: '(チャージ800yen + ドリンク800yen)', areas: [[88, 682, 420, 40]], fontSize: 22, letterSpacing: 0.5, latin: SET_LATIN },
+            { key: 'memo', label: '注意書き', text: '※ワンドリンクオーダー制', areas: [[150, 797, 285, 36]], fontSize: 21, letterSpacing: 2 },
+          ],
+        },
+        {
+          id: 'teaSet',
+          label: 'お茶会セット',
+          type: 'list',
+          bullet: 'heart',
+          fields: [
+            { key: 'title1', label: '見出し（1行目）', text: 'メイドさんと一緒に', areas: [[620, 425, 320, 38]], erase: [[630, 425, 300, 38]], inpaint: true, fontSize: 31, fontWeight: 700, letterSpacing: 0.5, color: SET_TITLE },
+            { key: 'title2', label: '見出し（2行目）', text: 'お茶会セット', areas: [[620, 465, 330, 48]], erase: [[655, 465, 260, 48]], inpaint: true, fontSize: 42, fontWeight: 700, letterSpacing: 1, color: SET_TITLE },
+            { key: 'price', label: '価格', kind: 'price', text: '2,500yen', areas: [[615, 570, 345, 100]], ...SET_PRICE },
+            { key: 'footer', label: '下の一文', after: true, text: 'から選べます♡', areas: [[592, 872, 250, 32]], erase: [[588, 872, 185, 32]], align: 'left', fontSize: 22, letterSpacing: 2 },
+          ],
+          areas: [[597, 693, 250, 150]],
+          erase: [[588, 693, 227, 150]],
+          lineHeight: 50,
+          fontSize: 27,
+          letterSpacing: 3,
+          maxItems: 5,
+          items: ['ダージリン', 'アールグレイ', 'オリジナル'],
+        },
+        {
+          id: 'nomihodai',
+          label: '飲み放題',
+          type: 'fields',
+          areas: [],
+          fields: [
+            { key: 'title', label: '見出し', text: '飲み放題', areas: [[395, 1045, 295, 75]], inpaint: true, fontSize: 58, fontWeight: 700, letterSpacing: 14, color: SET_TITLE },
+            { key: 'detail1', label: '説明（1行目）', text: '自動延長・チャージを含む', areas: [[398, 1147, 275, 32]], fontSize: 22, letterSpacing: 2 },
+            { key: 'detail2', label: '説明（2行目）', text: '※2名様以上から！', areas: [[440, 1185, 190, 30]], fontSize: 20, letterSpacing: 2 },
+            { key: 'male', label: '価格（♂）', kind: 'price', text: '3000yen', areas: [[296, 1232, 225, 75]], align: 'left', ...SET_PRICE },
+            { key: 'female', label: '価格（♀）', kind: 'price', text: '2500yen', areas: [[631, 1232, 225, 75]], align: 'left', ...SET_PRICE },
+          ],
+        },
+        {
+          id: 'tax',
+          label: '下の一文',
+          type: 'text',
+          areas: [[352, 1372, 362, 28]],
+          fontSize: 16,
+          letterSpacing: 1.5,
+          text: 'お会計の際に、別途tax10%頂戴致します。',
+        },
+      ],
+    },
     {
       id: 'front',
       image: 'assets/menu-front.png',
@@ -57,9 +129,12 @@ window.MENU_CONFIG = {
             text: 'Cast Menu',
             areas: [[398, 293, 258, 58]],
             inpaint: true,
-            fontFamily: 'script',
-            fontSize: 46,
-            color: '#4a68a0',
+            fontFamily: 'title',
+            fontSize: 42,
+            fontWeight: 600,
+            condense: 0.9,
+            arc: 8,
+            gradient: ['#74a0d6', '#7eaad9', '#9ccbe3', '#7eaad9', '#74a0d6'],
           },
           areas: [[216, 410, 604, 230]],
           erase: [[205, 410, 625, 228]],
@@ -90,9 +165,12 @@ window.MENU_CONFIG = {
             text: 'Food',
             areas: [[455, 693, 135, 55]],
             inpaint: true,
-            fontFamily: 'script',
-            fontSize: 46,
-            color: '#4a68a0',
+            fontFamily: 'title',
+            fontSize: 42,
+            fontWeight: 600,
+            condense: 0.9,
+            arc: 8,
+            gradient: ['#74a0d6', '#7eaad9', '#9ccbe3', '#7eaad9', '#74a0d6'],
           },
           areas: [[335, 835, 480, 220]],
           erase: [[325, 835, 500, 220]],
@@ -117,9 +195,12 @@ window.MENU_CONFIG = {
             text: 'Karaoke',
             areas: [[430, 1130, 190, 60]],
             inpaint: true,
-            fontFamily: 'script',
-            fontSize: 46,
-            color: '#4a68a0',
+            fontFamily: 'title',
+            fontSize: 42,
+            fontWeight: 600,
+            condense: 0.9,
+            arc: 8,
+            gradient: ['#74a0d6', '#7eaad9', '#9ccbe3', '#7eaad9', '#74a0d6'],
           },
           areas: [[340, 1240, 448, 96]],
           erase: [[330, 1240, 470, 96]],
@@ -155,9 +236,12 @@ window.MENU_CONFIG = {
           type: 'text',
           areas: [[398, 281, 246, 78]],
           inpaint: true,
-          fontFamily: 'script',
-          fontSize: 58,
-          color: '#4a68a0',
+          fontFamily: 'title',
+          fontSize: 50,
+          fontWeight: 600,
+          condense: 0.9,
+          arc: 10,
+          gradient: ['#74a0d6', '#7eaad9', '#9ccbe3', '#7eaad9', '#74a0d6'],
           text: 'Alcohol',
           sub: {
             areas: [[466, 366, 124, 30]],
@@ -322,9 +406,12 @@ window.MENU_CONFIG = {
           type: 'text',
           areas: [[388, 978, 300, 74]],
           inpaint: true,
-          fontFamily: 'script',
-          fontSize: 58,
-          color: '#4a68a0',
+          fontFamily: 'title',
+          fontSize: 50,
+          fontWeight: 600,
+          condense: 0.9,
+          arc: 10,
+          gradient: ['#74a0d6', '#7eaad9', '#9ccbe3', '#7eaad9', '#74a0d6'],
           text: 'Non-alcohol',
           sub: {
             areas: [[440, 1046, 170, 34]],
