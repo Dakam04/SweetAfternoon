@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <!-- 아이폰 「ホーム画面に追加」용 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="メニュー管理">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <title></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&family=Great+Vibes&family=Shippori+Mincho:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/config.js" defer></script>
+  <script src="js/texts.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1 data-text="appTitle"></h1>
+    <a class="app-switch" href="../schedule-board/" data-text="toOtherApp"></a>
+    <nav class="page-tabs" id="page-tabs" role="tablist" data-text-label="pageTabsLabel"></nav>
+  </header>
+
+  <main class="layout">
+    <section class="poster" data-text-label="posterLabel">
+      <!-- 페이지마다 canvas 하나. 화면에는 고른 페이지만, 인쇄에는 모든 페이지가 나온다. -->
+      <div id="posters"></div>
+      <button type="button" class="poster__zoom" data-text="posterZoom"></button>
+      <p class="poster__hint" data-text="posterHint"></p>
+      <div class="poster__image">
+        <span class="poster__custom" id="custom-image-note" data-text="customImageNote" hidden></span>
+        <button type="button" data-action="replace-image" data-text="replaceImage"></button>
+        <button type="button" data-action="reset-image" data-text="resetImage" hidden></button>
+        <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp" hidden>
+      </div>
+    </section>
+
+    <section class="editor" data-text-label="editorLabel">
+      <div class="sections" id="sections"></div>
+    </section>
+  </main>
+
+  <dialog class="dialog" id="section-dialog" data-text-label="sectionDialogLabel">
+    <div id="dialog-body"></div>
+    <div class="dialog__actions">
+      <button type="button" class="primary" data-action="close-dialog" data-text="done"></button>
+    </div>
+  </dialog>
+
+  <dialog class="image-dialog" id="image-dialog" data-text-label="imageDialogLabel">
+    <div class="image-dialog__viewport" id="image-viewport">
+      <img id="image-preview" alt="" data-text-alt="imageAlt">
+    </div>
+    <p class="image-dialog__hint" data-text="imageHint"></p>
+    <div class="image-dialog__actions">
+      <button type="button" data-action="toggle-zoom" data-text="zoomIn"></button>
+      <button type="button" data-action="close-image" data-text="close"></button>
+      <a class="button primary" id="image-download" data-text="download"></a>
+    </div>
+  </dialog>
+
+  <dialog class="data-dialog" id="data-dialog" aria-labelledby="data-dialog-title">
+    <h2 id="data-dialog-title" data-text="dataTitle"></h2>
+    <p data-text="dataIntro"></p>
+    <ol class="data-dialog__steps">
+      <li data-text="dataStepExport"></li>
+      <li data-text="dataStepImport"></li>
+    </ol>
+    <p class="data-dialog__note" data-text="dataNote"></p>
+    <div class="data-dialog__actions">
+      <button type="button" data-action="export" class="primary" data-text="dataExport"></button>
+      <button type="button" data-action="import" data-text="dataImport"></button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+    <div class="data-dialog__footer">
+      <button type="button" data-action="close-data" data-text="close"></button>
+    </div>
+  </dialog>
+
+  <footer class="actions">
+    <p class="actions__status" id="status" role="status" aria-live="polite"></p>
+    <div class="actions__buttons">
+      <button type="button" data-action="reset" data-text="resetPage"></button>
+      <button type="button" data-action="download" data-text="imagePreview"></button>
+      <button type="button" data-action="print" data-text="print"></button>
+      <button type="button" data-action="data" data-text="dataMove"></button>
+      <button type="button" data-action="save" class="primary" data-text="save"></button>
+    </div>
+  </footer>
+</body>
+</html>

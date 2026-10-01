@@ -1,0 +1,563 @@
+:root {
+  --pink: #f1b6cb;
+  --pink-ink: #a94f71;
+  --blue: #a9cdee;
+  --blue-ink: #3f64a0;
+  --ink: #2c4c85;
+  --text: #3a4768;
+  --muted: #7a86a3;
+  --line: #d8e5f4;
+  --bg: #f6f8fd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  padding: 8px 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--blue);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary,
+.button.primary {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.button {
+  display: inline-block;
+  padding: 8px 14px;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pink-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- 상단 ---------- */
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  /* 홈 화면에서 전체 화면으로 열 때 상태 표시줄·노치를 피한다 */
+  padding: calc(14px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 14px calc(20px + env(safe-area-inset-left));
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.app-switch {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.app-switch:hover {
+  border-color: var(--blue);
+}
+
+.page-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.page-tabs__tab {
+  min-height: 40px;
+}
+
+.page-tabs__tab[aria-selected="true"] {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+/* ---------- 본문 ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 20px 20px 110px;
+}
+
+.poster {
+  position: sticky;
+  top: 20px;
+}
+
+.poster__zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: rgb(255 255 255 / 0.92);
+}
+
+.poster canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.poster canvas[hidden] {
+  display: none;
+}
+
+.poster__hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.poster__image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.poster__image button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.poster__custom {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--pink-ink);
+  background: #fdf0f5;
+  border-radius: 999px;
+}
+
+.sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.section {
+  padding: 12px 14px 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--blue);
+  border-radius: 0 0 10px 10px;
+}
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.section__head h2 {
+  margin: 0 auto 0 0;
+  font-size: 17px;
+  color: var(--blue-ink);
+}
+
+.section__count {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.section input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 7px 10px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.section input:focus {
+  outline: none;
+  border-color: var(--blue-ink);
+}
+
+.field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 34px);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.section--price .item,
+.section--list .item {
+  grid-template-columns: minmax(0, 1fr) 6em repeat(3, 34px);
+}
+
+.item__button {
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.section__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.section__add {
+  flex: 1 1 140px;
+  border-style: dashed;
+}
+
+.note {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 4px;
+}
+
+.item__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+.section--capsule .item {
+  grid-template-columns: minmax(0, 1fr) 7em repeat(3, 34px);
+}
+
+/* ---------- 수정 모달 ---------- */
+
+.dialog {
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.dialog::backdrop {
+  background: rgb(44 76 133 / 0.35);
+}
+
+.dialog .section {
+  border-radius: 0;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+}
+
+/* ---------- 이미지 미리보기 ---------- */
+
+.image-dialog {
+  width: min(1100px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 16px;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 12px;
+}
+
+.image-dialog::backdrop {
+  background: rgb(44 76 133 / 0.5);
+}
+
+.image-dialog__viewport {
+  max-height: calc(100dvh - 180px);
+  overflow: auto;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.image-dialog img {
+  display: block;
+  width: 100%;
+  max-height: calc(100dvh - 180px);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+/* 원본 크기로 보여주고, 넘치는 부분은 스크롤 */
+.image-dialog__viewport.is-zoomed img {
+  width: auto;
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
+}
+
+.image-dialog__hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.image-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---------- 데이터 이동 ---------- */
+
+.data-dialog {
+  width: min(480px, calc(100vw - 24px));
+  padding: 20px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.data-dialog::backdrop {
+  background: rgb(44 76 133 / 0.5);
+}
+
+.data-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.data-dialog p,
+.data-dialog__steps {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.data-dialog__steps {
+  padding-left: 1.4em;
+}
+
+.data-dialog__note {
+  color: var(--muted);
+}
+
+.data-dialog__actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.data-dialog__actions button {
+  min-height: 44px;
+}
+
+.data-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* ---------- 하단 버튼 ---------- */
+
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: rgb(255 255 255 / 0.96);
+  border-top: 1px solid var(--line);
+}
+
+.actions__status {
+  flex: 1;
+  min-width: 180px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.actions__status.is-error {
+  color: var(--pink-ink);
+}
+
+.actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- 태블릿 가로 ---------- */
+
+@media (max-width: 1200px) {
+  .sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- 휴대폰·태블릿 세로 ---------- */
+
+/* ---------- 터치 기기 ---------- */
+
+/* iOS Safari 는 16px 보다 작은 입력칸을 누르면 화면을 자동 확대하므로 16px 로 맞춘다. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .sections {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 12px 12px 150px;
+  }
+
+  .poster {
+    position: relative;
+  }
+
+  .page-tabs {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .page-tabs__tab {
+    flex: 1;
+  }
+
+  .actions {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .actions__buttons {
+    width: 100%;
+  }
+
+  .actions__buttons button {
+    flex: 1 1 30%;
+    padding: 10px 4px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- 인쇄: 포스터만 ---------- */
+
+@page {
+  size: A4 portrait;
+  margin: 8mm;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .topbar,
+  .editor,
+  .actions,
+  .poster__hint,
+  .poster__zoom,
+  .poster__image,
+  dialog {
+    display: none !important;
+  }
+
+  .layout {
+    display: block;
+    padding: 0;
+  }
+
+  .poster {
+    position: static;
+  }
+
+  /* 화면에서 숨긴 페이지도 모두 한 장씩 인쇄한다. */
+  .poster canvas,
+  .poster canvas[hidden] {
+    display: block !important;
+    box-shadow: none;
+    border-radius: 0;
+    break-after: page;
+  }
+
+  .poster canvas:last-child {
+    break-after: auto;
+  }
+}
