@@ -6,6 +6,11 @@ window.BOARD_TEXTS = {
   pageTitle: 'シフト管理 | Sweet Afternoon',
   appTitle: 'シフト管理',
 
+  // ---------- 메뉴판으로 이동 ----------
+  toOtherApp: 'メニュー管理へ',
+  confirmSaveBeforeLeave: '保存していない変更があります。保存してから移動しますか？',
+  confirmDiscardBeforeLeave: '保存せずに移動しますか？（変更は消えます）',
+
   // ---------- 주 이동 ----------
   weekNavLabel: '週の移動',
   prevWeek: '前の週',
@@ -23,6 +28,16 @@ window.BOARD_TEXTS = {
   posterLabel: 'プレビュー',
   posterZoom: '拡大表示',
   posterHint: 'ポスターの枠をタップすると、その日を編集できます。',
+
+  // ---------- 임시 이미지 ----------
+  replaceImage: '画像を差し替え',
+  resetImage: '元の画像に戻す',
+  customImageNote: '仮の画像を使用中（この端末だけ）',
+  imageReplaced: '画像を差し替えました。この端末だけに保存されます。',
+  imageRatioWarning: '画像を差し替えました。ただし縦横の比率が元の画像と違うため、文字の位置がずれることがあります。',
+  imageReplaceFailed: '画像を差し替えられませんでした。画像ファイル（png・jpg）を選んでください。',
+  imageResetDone: '元の画像に戻しました。',
+  confirmResetImage: 'ポスターの画像を元に戻します。よろしいですか？',
   posterClosedHeading: '— Holiday —',
   // 이벤트 띠 문구. 예: ♡ 生誕祭 ♡
   posterEvent: (text) => `♡ ${text} ♡`,

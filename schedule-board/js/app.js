@@ -23,6 +23,8 @@ const state = {
   schedule: {},
   dirty: false,
   template: null,
+  // 임시 이미지를 쓰고 있는지
+  customImage: false,
 };
 
 // ---------- 날짜 ----------
@@ -870,6 +872,22 @@ async function importData(file) {
   selectWeek(state.weekOffset);
 }
 
+// 메뉴판으로 옮길 때, 저장하지 않은 변경이 있으면 저장할지 먼저 묻는다.
+function leaveTo(url) {
+  if (state.dirty) {
+    if (confirm(TEXTS.confirmSaveBeforeLeave)) {
+      if (!saveSchedule()) {
+        return;
+      }
+    } else if (!confirm(TEXTS.confirmDiscardBeforeLeave)) {
+      return;
+    }
+  }
+  // 이미 물어봤으므로 창을 떠날 때의 경고는 띄우지 않는다.
+  state.dirty = false;
+  location.href = url;
+}
+
 function handleAction(action) {
   const actions = {
     save: saveSchedule,
@@ -891,13 +909,93 @@ function selectWeek(offset) {
   drawPoster();
 }
 
-function loadTemplate() {
+function loadTemplate(src = CONFIG.templateImage) {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error('テンプレート画像を読み込めませんでした'));
-    image.src = CONFIG.templateImage;
+    image.src = src;
   });
+}
+
+// ---------- 임시 이미지 (이 기기에만 저장) ----------
+
+// 급할 때 템플릿 이미지를 서버에 올리기 전에 바꿔 쓰는 용도.
+// 이미지는 커서 localStorage 대신 IndexedDB 에 저장한다.
+const IMAGE_DB = { name: 'sweet-afternoon-schedule-images', store: 'images', key: 'template' };
+
+function openImageDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(IMAGE_DB.name, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(IMAGE_DB.store);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function imageDb(mode, action) {
+  const db = await openImageDb();
+  return new Promise((resolve, reject) => {
+    const request = action(db.transaction(IMAGE_DB.store, mode).objectStore(IMAGE_DB.store));
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  }).finally(() => db.close());
+}
+
+// 저장된 임시 이미지. 없거나 읽을 수 없으면 null.
+async function loadCustomImage() {
+  try {
+    const blob = await imageDb('readonly', (store) => store.get(IMAGE_DB.key));
+    return blob ? await loadTemplate(URL.createObjectURL(blob)) : null;
+  } catch (err) {
+    console.error('仮の画像を読み込めませんでした', err);
+    return null;
+  }
+}
+
+async function replaceImage(file) {
+  let image;
+  try {
+    image = await loadTemplate(URL.createObjectURL(file));
+    await imageDb('readwrite', (store) => store.put(file, IMAGE_DB.key));
+  } catch (err) {
+    console.error('画像を差し替えられませんでした', err);
+    setStatus(TEXTS.imageReplaceFailed, true);
+    return;
+  }
+  useImage(image, true);
+  // 비율이 다르면 카드 위치가 어긋나므로 알려 준다.
+  const { width, height } = CONFIG.template;
+  const off = Math.abs(image.naturalWidth / image.naturalHeight / (width / height) - 1) > 0.02;
+  setStatus(off ? TEXTS.imageRatioWarning : TEXTS.imageReplaced, off);
+}
+
+async function resetImage() {
+  if (!confirm(TEXTS.confirmResetImage)) {
+    return;
+  }
+  try {
+    await imageDb('readwrite', (store) => store.delete(IMAGE_DB.key));
+    useImage(await loadTemplate(), false);
+  } catch (err) {
+    console.error('元の画像に戻せませんでした', err);
+    setStatus(TEXTS.templateFailed, true);
+    return;
+  }
+  setStatus(TEXTS.imageResetDone);
+}
+
+function useImage(image, custom) {
+  state.template = image;
+  state.customImage = custom;
+  drawPoster();
+  renderImageControls();
+}
+
+// 임시 이미지를 쓰고 있으면 표시하고 「元の画像に戻す」를 보여 준다.
+function renderImageControls() {
+  document.getElementById('custom-image-note').hidden = !state.customImage;
+  document.querySelector('[data-action="reset-image"]').hidden = !state.customImage;
 }
 
 // index.html 의 data-text / data-text-label / data-text-alt 에 texts.js 의 문구를 넣는다.
@@ -918,7 +1016,10 @@ async function init() {
   applyTexts();
   state.schedule = loadSchedule();
   try {
-    state.template = await loadTemplate();
+    // 임시 이미지가 저장되어 있으면 그것을, 없으면 원래 템플릿을 쓴다.
+    const custom = await loadCustomImage();
+    state.template = custom || (await loadTemplate());
+    state.customImage = Boolean(custom);
   } catch (err) {
     console.error(err);
     setStatus(TEXTS.templateFailed, true);
@@ -974,6 +1075,17 @@ async function init() {
   document.getElementById('image-preview').addEventListener('click', (event) => setImageZoom(!isZoomed(), event));
   imageDialog.querySelector('[data-action="toggle-zoom"]').addEventListener('click', () => setImageZoom(!isZoomed()));
   document.querySelector('.poster__zoom').addEventListener('click', openImagePreview);
+
+  renderImageControls();
+  const imageFile = document.getElementById('image-file');
+  document.querySelector('[data-action="replace-image"]').addEventListener('click', () => imageFile.click());
+  document.querySelector('[data-action="reset-image"]').addEventListener('click', resetImage);
+  imageFile.addEventListener('change', () => {
+    if (imageFile.files[0]) {
+      replaceImage(imageFile.files[0]);
+    }
+    imageFile.value = '';
+  });
   // 모달에서 고친 값을 목록에도 반영한다.
   dialog.addEventListener('close', renderEditor);
 
@@ -998,6 +1110,10 @@ async function init() {
       event.preventDefault();
       saveSchedule();
     }
+  });
+  document.querySelector('.app-switch').addEventListener('click', (event) => {
+    event.preventDefault();
+    leaveTo(event.currentTarget.href);
   });
   window.addEventListener('beforeunload', (event) => {
     if (state.dirty) {

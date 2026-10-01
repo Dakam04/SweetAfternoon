@@ -22,6 +22,7 @@
 <body>
   <header class="topbar">
     <h1 data-text="appTitle"></h1>
+    <a class="app-switch" href="../menu-board/" data-text="toOtherApp"></a>
     <nav class="week-nav" data-text-label="weekNavLabel">
       <button type="button" class="week-nav__step" data-week="prev" data-text-label="prevWeek">‹</button>
       <p class="week-nav__current" aria-live="polite">
@@ -39,6 +40,12 @@
       <canvas id="poster"></canvas>
       <button type="button" class="poster__zoom" data-text="posterZoom"></button>
       <p class="poster__hint" data-text="posterHint"></p>
+      <div class="poster__image">
+        <span class="poster__custom" id="custom-image-note" data-text="customImageNote" hidden></span>
+        <button type="button" data-action="replace-image" data-text="replaceImage"></button>
+        <button type="button" data-action="reset-image" data-text="resetImage" hidden></button>
+        <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp" hidden>
+      </div>
     </section>
 
     <section class="editor" data-text-label="editorLabel">

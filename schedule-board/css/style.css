@@ -84,6 +84,19 @@ button.primary,
   color: var(--ink);
 }
 
+.app-switch {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.app-switch:hover {
+  border-color: var(--blue);
+}
+
 .week-nav {
   display: flex;
   flex-wrap: wrap;
@@ -173,6 +186,28 @@ button.primary,
   font-size: 13px;
   text-align: center;
   color: var(--muted);
+}
+
+.poster__image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.poster__image button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.poster__custom {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--pink-ink);
+  background: #fdf0f5;
+  border-radius: 999px;
 }
 
 .days {
@@ -600,6 +635,7 @@ button.primary,
   .actions,
   .poster__hint,
   .poster__zoom,
+  .poster__image,
   dialog {
     display: none !important;
   }
