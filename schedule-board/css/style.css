@@ -312,9 +312,23 @@ button.primary,
 
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 7.5em 40px;
+  grid-template-columns: minmax(0, 1fr) 7.5em 30px 40px;
   gap: 6px;
   margin-bottom: 6px;
+}
+
+.row__move {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+}
+
+.row__move-button {
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  border-radius: 6px;
 }
 
 .row__remove {

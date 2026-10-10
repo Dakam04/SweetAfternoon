@@ -55,6 +55,8 @@ window.BOARD_TEXTS = {
   timeLabel: '時間',
   addRow: '＋ キャストを追加',
   removeRow: 'この行を削除',
+  moveRowUp: '上へ移動',
+  moveRowDown: '下へ移動',
   showOptions: '候補を表示',
 
   // ---------- 1일 편집 창 ----------

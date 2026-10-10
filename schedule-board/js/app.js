@@ -236,7 +236,7 @@ function renderDayPanel(date, index) {
 
   const rows = document.createElement('div');
   rows.className = 'day__rows';
-  day.rows.forEach((row, rowIndex) => rows.append(renderRow(row, rowIndex)));
+  day.rows.forEach((row, rowIndex) => rows.append(renderRow(row, rowIndex, day.rows.length)));
 
   const add = document.createElement('button');
   add.type = 'button';
@@ -249,7 +249,18 @@ function renderDayPanel(date, index) {
   return panel;
 }
 
-function renderRow(row, rowIndex) {
+function moveButton(action, label, symbol, disabled) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'row__move-button';
+  button.dataset.action = action;
+  button.textContent = symbol;
+  button.disabled = disabled;
+  button.setAttribute('aria-label', label);
+  return button;
+}
+
+function renderRow(row, rowIndex, rowCount) {
   const line = document.createElement('div');
   line.className = 'row';
   line.dataset.index = String(rowIndex);
@@ -264,7 +275,15 @@ function renderRow(row, rowIndex) {
   remove.textContent = '×';
   remove.setAttribute('aria-label', TEXTS.removeRow);
 
-  line.append(renderCombo('name', row.name, TEXTS.namePlaceholder, 12), time, remove);
+  // 포스터에 적히는 순서를 바꾼다.
+  const move = document.createElement('div');
+  move.className = 'row__move';
+  move.append(
+    moveButton('move-up', TEXTS.moveRowUp, '▲', rowIndex === 0),
+    moveButton('move-down', TEXTS.moveRowDown, '▼', rowIndex === rowCount - 1),
+  );
+
+  line.append(renderCombo('name', row.name, TEXTS.namePlaceholder, 12), time, move, remove);
   return line;
 }
 
@@ -294,16 +313,28 @@ function handleEditorClick(event) {
     return;
   }
   const day = getDay(panel.dataset.key);
+  // 순서를 바꾼 행이 옮겨 간 위치
+  let to = null;
   if (action === 'add-row' && day.rows.length < CONFIG.maxRows) {
     day.rows.push({ name: '', time: '' });
   } else if (action === 'remove-row') {
     day.rows.splice(Number(event.target.closest('.row').dataset.index), 1);
+  } else if (action === 'move-up' || action === 'move-down') {
+    const from = Number(event.target.closest('.row').dataset.index);
+    to = from + (action === 'move-up' ? -1 : 1);
+    [day.rows[from], day.rows[to]] = [day.rows[to], day.rows[from]];
   } else {
     return;
   }
   refreshPanels();
+  const dayPanel = `.day[data-key="${panel.dataset.key}"]`;
   if (action === 'add-row') {
-    event.currentTarget.querySelector(`.day[data-key="${panel.dataset.key}"] .row:last-child input`)?.focus();
+    event.currentTarget.querySelector(`${dayPanel} .row:last-child input`)?.focus();
+  } else if (to !== null) {
+    // 같은 행을 계속 옮길 수 있도록 옮겨 간 행의 같은 버튼에 포커스를 둔다. 끝에 닿아 꺼졌으면 반대쪽 버튼.
+    const moved = event.currentTarget.querySelector(`${dayPanel} .row[data-index="${to}"]`);
+    const same = moved?.querySelector(`[data-action="${action}"]`);
+    (same && !same.disabled ? same : moved?.querySelector('.row__move-button:not(:disabled)'))?.focus();
   }
   markChanged();
 }
@@ -568,7 +599,7 @@ function drawDateLabel(ctx, card, date, color) {
 // 카드 윗부분에 이벤트 띠를 그리고, 남은 글자 영역을 돌려준다.
 function drawEventRibbon(ctx, card, text, color) {
   const [x, y, w, h] = card.area;
-  const ribbonH = 66;
+  const ribbonH = 84;
   const top = y + 8;
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -576,7 +607,7 @@ function drawEventRibbon(ctx, card, text, color) {
   ctx.fill();
 
   const label = TEXTS.posterEvent(text);
-  fitFont(ctx, label, 700, 36, w - 40);
+  fitFont(ctx, label, 700, 52, w - 40);
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
