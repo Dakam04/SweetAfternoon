@@ -265,8 +265,8 @@ function renderRow(row, rowIndex, rowCount) {
   line.className = 'row';
   line.dataset.index = String(rowIndex);
 
-  const time = textInput('time', row.time, TEXTS.timePlaceholder, 12);
-  time.setAttribute('aria-label', TEXTS.timeLabel);
+  const time = renderCombo('time', row.time, TEXTS.timePlaceholder, 12);
+  time.querySelector('input').setAttribute('aria-label', TEXTS.timeLabel);
 
   const remove = document.createElement('button');
   remove.type = 'button';
@@ -386,8 +386,8 @@ function comboOptions(fieldName) {
   const presets = { closedNote: CONFIG.closedPresets, closedMessage: CONFIG.closedMessagePresets };
   const values = new Set(presets[fieldName] || []);
   for (const day of Object.values(state.schedule)) {
-    if (fieldName === 'name') {
-      day.rows.forEach((row) => row.name.trim() && values.add(row.name.trim()));
+    if (ROW_FIELDS.includes(fieldName)) {
+      day.rows.forEach((row) => row[fieldName].trim() && values.add(row[fieldName].trim()));
     } else if (day[fieldName]?.trim()) {
       values.add(day[fieldName].trim());
     }
