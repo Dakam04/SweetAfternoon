@@ -39,8 +39,8 @@ window.BOARD_TEXTS = {
   imageResetDone: '元の画像に戻しました。',
   confirmResetImage: 'ポスターの画像を元に戻します。よろしいですか？',
   posterClosedHeading: '— Holiday —',
-  // 이벤트 띠 문구. 예: ♡ 生誕祭 ♡
-  posterEvent: (text) => `♡ ${text} ♡`,
+  // 이벤트 띠 문구. 예: 生誕祭
+  posterEvent: (text) => text,
 
   // ---------- 입력 ----------
   editorLabel: '入力',
